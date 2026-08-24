@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NitroCloud.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="InfluxDB.Client" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NitroCloud.Domain\NitroCloud.Domain.csproj" />
+    <ProjectReference Include="..\NitroCloud.Shared\NitroCloud.Shared.csproj" />
+    <ProjectReference Include="..\NitroCloud.Storage\NitroCloud.Storage.csproj" />
+    <ProjectReference Include="..\NitroCloud.Telemetry\NitroCloud.Telemetry.csproj" />
+  </ItemGroup>
+
+</Project>

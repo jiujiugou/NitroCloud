@@ -1,0 +1,23 @@
+/* 浅色主题（/admin 管理面板）——ADR-009 D1：主题走 CSS variables */
+.theme-light {
+  --bg-primary: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-card-2: #f0f2f5;
+  --bg-hover: #f0f2f5;
+  --border: #e4e7ed;
+  --border-strong: #c8cdd4;
+  --text: #4a5568;
+  --text-muted: #a0aec0;
+  --text-heading: #1a202c;
+  --accent: #409eff;
+  --accent-dim: #337ecc;
+  --green: #67c23a;
+  --red: #f56c6c;
+  --orange: #e6a23c;
+  --yellow: #d29922;
+  --purple: #9060eb;
+  --cyan: #39c5cf;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}

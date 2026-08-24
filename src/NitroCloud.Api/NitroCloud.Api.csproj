@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="*" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NitroCloud.Domain\NitroCloud.Domain.csproj" />
+    <ProjectReference Include="..\NitroCloud.Shared\NitroCloud.Shared.csproj" />
+    <ProjectReference Include="..\NitroCloud.Storage\NitroCloud.Storage.csproj" />
+    <ProjectReference Include="..\NitroCloud.Telemetry\NitroCloud.Telemetry.csproj" />
+    <ProjectReference Include="..\NitroCloud.Persistence\NitroCloud.Persistence.csproj" />
+    <ProjectReference Include="..\NitroCloud.Influx\NitroCloud.Influx.csproj" />
+    <ProjectReference Include="..\NitroCloud.Ingest\NitroCloud.Ingest.csproj" />
+  </ItemGroup>
+</Project>

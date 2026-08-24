@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NitroCloud.UnitTests" />
+    <InternalsVisibleTo Include="NitroCloud.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MQTTnet" Version="5.1.0.1559" />
+    <PackageReference Include="Polly" Version="8.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NitroCloud.Domain\NitroCloud.Domain.csproj" />
+    <ProjectReference Include="..\NitroCloud.Shared\NitroCloud.Shared.csproj" />
+    <ProjectReference Include="..\NitroCloud.Storage\NitroCloud.Storage.csproj" />
+    <ProjectReference Include="..\NitroCloud.Telemetry\NitroCloud.Telemetry.csproj" />
+  </ItemGroup>
+
+</Project>

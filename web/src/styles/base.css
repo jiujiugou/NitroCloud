@@ -1,0 +1,36 @@
+/* NitroCloud 前端基础样式（ADR-009 D1：组件一律用 var(--...) 不写死颜色） */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+}
+
+/* 滚动条（深色/浅色主题通用，颜色走变量） */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Element Plus 组件按主题变量着色（深色大屏 + 浅色管理面板共用） ── */
+.el-card { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
+.el-card__header { border-bottom: 1px solid var(--border) !important; color: var(--text-heading) !important; }
+.el-table { background: var(--bg-card) !important; --el-table-tr-bg-color: var(--bg-card); --el-table-row-hover-bg-color: var(--bg-hover); --el-table-border-color: var(--border); }
+.el-table th.el-table__cell { background: var(--bg-card) !important; color: var(--text-muted) !important; border-color: var(--border) !important; font-weight: 600; }
+.el-table td.el-table__cell { border-color: var(--border) !important; color: var(--text); }
+.el-dialog { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; }
+.el-dialog__title { color: var(--text-heading) !important; }
+.el-input__wrapper, .el-select .el-input__wrapper, .el-input-number .el-input__wrapper { background: var(--bg-card) !important; box-shadow: 0 0 0 1px var(--border) inset !important; }
+.el-input__inner, .el-select__placeholder, .el-select .el-select__selected-item { color: var(--text) !important; }
+.el-select__wrapper { background: var(--bg-card) !important; box-shadow: 0 0 0 1px var(--border) inset !important; }
+.el-button--primary { --el-button-bg-color: var(--accent); --el-button-border-color: var(--accent); --el-button-hover-bg-color: var(--accent-dim); --el-button-hover-border-color: var(--accent-dim); }
+.el-pagination { --el-pagination-bg-color: var(--bg-card); --el-pagination-text-color: var(--text); --el-pagination-button-color: var(--text); }
+
+/* 数值等宽（避免实时值抖动） */
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* 通用卡片外壳 */
+.panel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }

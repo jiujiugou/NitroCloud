@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "NitroCloud.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:52228;http://localhost:52229"
+    }
+  }
+}

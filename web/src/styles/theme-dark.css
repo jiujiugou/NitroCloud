@@ -1,0 +1,30 @@
+/* 深色主题（/dashboard 大屏）——ADR-009 D1：主题走 CSS variables */
+.theme-dark {
+  --bg-primary: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-2: #1c2333;
+  --bg-hover: #21262d;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --text: #c9d1d9;
+  --text-muted: #8b949e;
+  --text-heading: #e6edf3;
+  --accent: #409eff;
+  --accent-dim: #2f81f7;
+  --green: #3fb950;
+  --red: #f85149;
+  --orange: #e6a23c;
+  --yellow: #d29922;
+  --purple: #a371f7;
+  --cyan: #39c5cf;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* 深色下 Element Plus 文本色修正（弹窗/表单内） */
+.theme-dark .el-dialog__body { color: var(--text); }
+.theme-dark .el-form-item__label { color: var(--text) !important; }
+.theme-dark .el-message-box { background: var(--bg-card); border: 1px solid var(--border); }
+.theme-dark .el-popover.el-popper { background: var(--bg-card); border: 1px solid var(--border); }
+.theme-dark .el-popover.el-popper .el-popper__arrow::before { background: var(--bg-card); border-color: var(--border); }

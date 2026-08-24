@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NitroCloud.UnitTests" />
+    <InternalsVisibleTo Include="NitroCloud.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="*" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="*" />
+    <PackageReference Include="FluentMigrator" Version="*" />
+    <PackageReference Include="FluentMigrator.Runner.SQLite" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NitroCloud.Domain\NitroCloud.Domain.csproj" />
+    <ProjectReference Include="..\NitroCloud.Shared\NitroCloud.Shared.csproj" />
+    <ProjectReference Include="..\NitroCloud.Storage\NitroCloud.Storage.csproj" />
+    <ProjectReference Include="..\NitroCloud.Telemetry\NitroCloud.Telemetry.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="*" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="*" />
+    <PackageReference Include="Serilog.Sinks.File" Version="*" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="*" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="*" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="*" />
+    <PackageReference Include="prometheus-net" Version="*" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="*" />
+    <PackageReference Include="prometheus-net.DotNetRuntime" Version="*" />
+  </ItemGroup>
+
+</Project>

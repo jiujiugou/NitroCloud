@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NitroCloud.Domain/NitroCloud.Domain.csproj" />
+    <Project Path="src/NitroCloud.Shared/NitroCloud.Shared.csproj" />
+    <Project Path="src/NitroCloud.Storage/NitroCloud.Storage.csproj" />
+    <Project Path="src/NitroCloud.Telemetry/NitroCloud.Telemetry.csproj" />
+    <Project Path="src/NitroCloud.Persistence/NitroCloud.Persistence.csproj" />
+    <Project Path="src/NitroCloud.Influx/NitroCloud.Influx.csproj" />
+    <Project Path="src/NitroCloud.Ingest/NitroCloud.Ingest.csproj" />
+    <Project Path="src/NitroCloud.Api/NitroCloud.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NitroCloud.UnitTests/NitroCloud.UnitTests.csproj" />
+    <Project Path="tests/NitroCloud.IntegrationTests/NitroCloud.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
