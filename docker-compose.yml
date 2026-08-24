@@ -1,96 +1,145 @@
-# NitroCloud 单机演示编排（DoD 6：一条命令拉起）
+# NitroCloud 部署
 #
-# 用法：
-#   docker compose up -d                          # 仅基础服务（broker + InfluxDB）
-#   docker compose --profile full up -d --build   # 全链路（含 center + web 容器）
-#   docker compose down -v                        # 清理（含数据卷）
+# 一键启动：
+#   docker compose up -d --build
 #
-# 关键端口：1883 MQTT ｜ 18083 EMQX 控制台 ｜ 8086 InfluxDB ｜ 5100 center ｜ 8088 web
+# 停止：
+#   docker compose down
+#
+# 清理数据：
+#   docker compose down -v
+#
+# 用户访问：
+#   Web: http://服务器IP:8088
+#
+# 管理端口：
+#   MQTT: 1883
+#   EMQX Dashboard: 18083
+#
+# Docker 内部：
+#   Web → Center → InfluxDB
+#   Center → EMQX
+#
+# 服务：
+#   broker  MQTT Broker
+#   influx  时序数据库
+#   center  NitroCloud 中心服务
+#   web     Vue + Nginx
+
 name: nitrocloud
 
+networks:
+  nitrocloud-net:
+
 services:
-  # ── MQTT Broker（EMQX 5.x，DESIGN.md §3）──
+
+  # MQTT Broker
   broker:
     image: emqx:5.8.3
     container_name: nitrocloud-broker
     restart: unless-stopped
+    networks:
+      - nitrocloud-net
+
     environment:
-      EMQX_NODE__COOKIE: nitrocloud
-      EMQX_DASHBOARD__DEFAULT_PASSWORD: admin123456
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:-admin123456}
+      TZ: Asia/Shanghai
+
     ports:
       - "1883:1883"
       - "18083:18083"
+
     healthcheck:
       test: ["CMD", "emqx", "ctl", "status"]
       interval: 10s
       timeout: 5s
       retries: 12
 
-  # ── 时序库 InfluxDB 2.x（bucket: nitrocloud，自动初始化）──
+
+  # InfluxDB：保存时序数据
   influx:
     image: influxdb:2.7
     container_name: nitrocloud-influx
     restart: unless-stopped
+    networks:
+      - nitrocloud-net
+
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: admin123456
-      DOCKER_INFLUXDB_INIT_ORG: nitrocloud
-      DOCKER_INFLUXDB_INIT_BUCKET: nitrocloud
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: dev-token
-      DOCKER_INFLUXDB_INIT_RETENTION: 30d
-    ports:
-      - "8086:8086"
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-admin123456}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-nitrocloud}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-nitrocloud}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-dev-token}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION:-30d}
+      TZ: Asia/Shanghai
+
     volumes:
       - influx-data:/var/lib/influxdb2
+
     healthcheck:
       test: ["CMD", "influx", "ping"]
       interval: 10s
       timeout: 5s
       retries: 12
 
-  # ── 中心平台（ASP.NET Core；DoD 6 全链路拉起时启用）──
+
+  # NitroCloud Center
   center:
     build:
       context: .
       dockerfile: src/NitroCloud.Api/Dockerfile
+
     container_name: nitrocloud-center
     restart: unless-stopped
-    profiles: ["full"]
+    networks:
+      - nitrocloud-net
+
     depends_on:
       broker:
         condition: service_healthy
       influx:
         condition: service_healthy
+
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+
+      # 元数据 SQLite
       Persistence__ConnectionString: "Data Source=/data/nitrocloud.db"
-      Influx__Url: http://influx:8086
-      Influx__Token: dev-token
-      Influx__Org: nitrocloud
-      Influx__Bucket: nitrocloud
+
+      # InfluxDB
+      Influx__Url: "http://influx:8086"
+      Influx__Token: ${INFLUXDB_TOKEN:-dev-token}
+      Influx__Org: ${INFLUXDB_ORG:-nitrocloud}
+      Influx__Bucket: ${INFLUXDB_BUCKET:-nitrocloud}
+
+      # MQTT
       Ingest__MqttHost: broker
       Ingest__MqttPort: "1883"
-      Command__MqttHost: broker
-      Command__MqttPort: "1883"
-    ports:
-      - "5100:5100"
+
+      TZ: Asia/Shanghai
+
     volumes:
       - center-data:/data
 
-  # ── 前端大屏/管理面板（Vite 构建产物 + nginx 反代 /api、/hubs）──
+
+  # Vue 前端 + Nginx
   web:
     build:
-      context: web
+      context: ./web
       dockerfile: Dockerfile
+
     container_name: nitrocloud-web
     restart: unless-stopped
-    profiles: ["full"]
+    networks:
+      - nitrocloud-net
+
     depends_on:
-      center:
-        condition: service_started
+      - center
+
     ports:
-      - "8088:80"
+      - "${WEB_PORT:-8088}:80"
+
 
 volumes:
   influx-data:

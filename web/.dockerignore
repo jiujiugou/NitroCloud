@@ -1,0 +1,5 @@
+# NitroCloud web 构建上下文（web/）忽略项：仅送前端源码，不送 node_modules/dist 等产物
+node_modules/
+dist/
+.vite/
+*.log

@@ -1,0 +1,16 @@
+# NitroCloud 根 .dockerignore（center 镜像 build context = 仓库根）
+# 目的：剔除重型目录（.git/node_modules）与运行时产物（bin/obj/logs/*.db），仅送源码进构建上下文。
+
+**/bin/
+**/obj/
+**/logs/
+**/node_modules/
+**/dist/
+**/backups/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+.vs/
+.git/
+.env
+.env.*
