@@ -1,0 +1,6 @@
+# 统一换行符：shell 脚本强制 LF（Windows 检出 autocrlf 也不会转 CRLF，避免 bash 报 \r）
+*.sh text eol=lf
+*.dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text

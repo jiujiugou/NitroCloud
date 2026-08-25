@@ -10,7 +10,7 @@ namespace NitroCloud.Domain.Measurements;
 public sealed record MeasurementRecord
 {
     /// <summary>所属站点（来自 topic 第三段，ADR-004；记录级冗余，便于缓存/写库按站点隔离）</summary>
-    public required string SiteId { get; init; }
+    public string SiteId { get; init; } = string.Empty;
 
     /// <summary>记录唯一标识（网关生成）</summary>
     public Guid Id { get; init; }
