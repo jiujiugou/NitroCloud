@@ -24,7 +24,7 @@ public sealed class InfluxTimeseriesStore : ITimeseriesStore
     private readonly ILogger<InfluxTimeseriesStore> _logger;
 
     /// <summary>创建时序存储实现</summary>
-    public InfluxTimeseriesStore(IQueryApi queryApi, BatchWriter writer,IOptions<InfluxOptions> options, ILogger<InfluxTimeseriesStore> logger)
+    public InfluxTimeseriesStore(IQueryApi queryApi, BatchWriter writer, IOptions<InfluxOptions> options, ILogger<InfluxTimeseriesStore> logger)
     {
         _queryApi = queryApi;
         _writer = writer;

@@ -1,0 +1,77 @@
+{
+  "broker": {
+    "host": "127.0.0.1",
+    "port": 1883,
+    "username": "",
+    "password": "",
+    "client_id_prefix": "nitro-sim-",
+    "qos": 1,
+    "keepalive": 30
+  },
+  "interval_ms": 1000,
+  "gateways": [
+    {
+      "site_id": "site-web-1",
+      "device_id": "23763b14-88c2-4f1d-873c-16202d2092df",
+      "points": [
+        {
+          "point_id": "241e9c46-ce8e-49d3-9055-f68b19f1af43",
+          "name": "空压机_H006",
+          "data_type": "Int32",
+          "kind": "sine",
+          "min": 500000,
+          "max": 530000,
+          "period_s": 60,
+          "quality": 0
+        },
+        {
+          "name": "冷却水温度",
+          "data_type": "Float",
+          "kind": "sine",
+          "min": 20.0,
+          "max": 35.0,
+          "period_s": 30,
+          "decimals": 1
+        },
+        {
+          "name": "空压机运行状态",
+          "data_type": "Bool",
+          "kind": "step",
+          "min": 0,
+          "max": 1,
+          "period_s": 20
+        },
+        {
+          "name": "排气压力",
+          "data_type": "Double",
+          "kind": "ramp",
+          "min": 0.6,
+          "max": 1.0,
+          "period_s": 45
+        },
+        {
+          "name": "电流",
+          "data_type": "Int16",
+          "kind": "walk",
+          "min": 80,
+          "max": 220,
+          "step": 3
+        }
+      ]
+    },
+    {
+      "site_id": "site-web-1",
+      "device_id": "8f3b9d0a-6c21-4f7e-9b0c-1d2e3f4a5b6c",
+      "points": [
+        {
+          "name": "主轴温度",
+          "data_type": "Float",
+          "kind": "sine",
+          "min": 45.0,
+          "max": 62.5,
+          "period_s": 25
+        }
+      ]
+    }
+  ]
+}
