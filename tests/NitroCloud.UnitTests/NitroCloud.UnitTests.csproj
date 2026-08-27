@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\src\NitroCloud.Domain\NitroCloud.Domain.csproj" />
     <ProjectReference Include="..\..\src\NitroCloud.Shared\NitroCloud.Shared.csproj" />
     <ProjectReference Include="..\..\src\NitroCloud.Storage\NitroCloud.Storage.csproj" />
+    <ProjectReference Include="..\..\src\NitroCloud.Command\NitroCloud.Command.csproj" />
     <ProjectReference Include="..\..\src\NitroCloud.Ingest\NitroCloud.Ingest.csproj" />
     <ProjectReference Include="..\..\src\NitroCloud.Influx\NitroCloud.Influx.csproj" />
     <ProjectReference Include="..\..\src\NitroCloud.Persistence\NitroCloud.Persistence.csproj" />

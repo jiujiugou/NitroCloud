@@ -35,7 +35,7 @@ NitroGateway 只覆盖了「边缘采集 + 转发」这一半，缺「云端接�
 2. 实时数据经 SignalR 推到大屏，秒级刷新。
 3. 历史曲线可查、可导出 CSV。
 4. 云端告警汇总页面可用（按站点/级别过滤）。
-5. 反向写值从云端发起，收到网关回执，闭环打通。
+5. 反向写值从云端发起，收到网关回执，闭环打通。✅ 已落地（云侧 Command 模块 + `POST /api/commands/write`；端到端回执联调待 NitroGateway 命令处理器 / mqtt-simulator 回执模拟，见 ADR-010 D8）。
 6. 全链路演示脚本写进 README，一条命令可拉起。
 
 ---
@@ -234,7 +234,7 @@ tests/                     UnitTests + IntegrationTests
 | M1 骨架 | 仓库 + 目录 + Docker Compose（EMQX+InfluxDB）+ MQTT 订阅 + 写库 | 模拟网关数据能进 InfluxDB |
 | M2 元数据 | Site/Device/Point 管理 API + SQLite 迁移 | CRUD 可用 |
 | M3 实时 | SignalR 推送 + 大屏 + 历史曲线/导出 | 2 台模拟网关实时曲线 |
-| M4 告警+控制 | 告警汇总 + 反向写值闭环 + 回执 | 云端改值，网关侧收到并回执 |
+| M4 告警+控制 | 告警汇总 + 反向写值闭环 + 回执 | 云端改值，网关侧收到并回执 ✅ 云侧已落地（ADR-010）；回执端到端联调待网关侧前置 |
 | M5 收尾 | 测试 + 演示脚本 + README | 6 条 DoD 全绿 |
 
 ---

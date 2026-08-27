@@ -21,5 +21,6 @@
     <ProjectReference Include="..\NitroCloud.Persistence\NitroCloud.Persistence.csproj" />
     <ProjectReference Include="..\NitroCloud.Influx\NitroCloud.Influx.csproj" />
     <ProjectReference Include="..\NitroCloud.Ingest\NitroCloud.Ingest.csproj" />
+    <ProjectReference Include="..\NitroCloud.Command\NitroCloud.Command.csproj" />
   </ItemGroup>
 </Project>

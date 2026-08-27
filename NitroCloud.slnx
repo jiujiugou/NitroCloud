@@ -7,6 +7,7 @@
     <Project Path="src/NitroCloud.Persistence/NitroCloud.Persistence.csproj" />
     <Project Path="src/NitroCloud.Influx/NitroCloud.Influx.csproj" />
     <Project Path="src/NitroCloud.Ingest/NitroCloud.Ingest.csproj" />
+    <Project Path="src/NitroCloud.Command/NitroCloud.Command.csproj" />
     <Project Path="src/NitroCloud.Api/NitroCloud.Api.csproj" />
   </Folder>
   <Folder Name="/tests/">

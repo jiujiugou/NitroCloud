@@ -3,6 +3,7 @@ using NitroCloud.Api;
 using NitroCloud.Api.HealthChecks;
 using NitroCloud.Api.Hubs;
 using NitroCloud.Api.Realtime;
+using NitroCloud.Command;
 using NitroCloud.Ingest;
 using NitroCloud.Influx;
 using NitroCloud.Persistence.Sqlite;
@@ -37,6 +38,7 @@ builder.Services.AddSingleton<OnlineStatusService>();
 builder.Services.AddNitroSqlite(builder.Configuration);
 builder.Services.AddNitroInflux(builder.Configuration);
 builder.Services.AddNitroIngest(builder.Configuration);
+builder.Services.AddNitroCommand(builder.Configuration);
 
 // ── 推送/序列化契约：camelCase + 枚举序列化为名称（前端 types.ts 约定）──
 builder.Services.AddSignalR().AddJsonProtocol(o =>

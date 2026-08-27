@@ -28,6 +28,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>告警汇总</summary>
     public DbSet<AlarmRecordEntity> AlarmRecords => Set<AlarmRecordEntity>();
 
+    /// <summary>命令记录（回写闭环，ADR-010 D2）</summary>
+    public DbSet<CommandRecordEntity> CommandRecords => Set<CommandRecordEntity>();
+
     /// <summary>创建上下文</summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -93,6 +96,21 @@ public sealed class AppDbContext : DbContext
             e.Property(x => x.Severity).HasMaxLength(32);
             e.Property(x => x.State).HasMaxLength(32);
             e.HasIndex(x => new { x.SiteId, x.State });
+        });
+
+        // ── command_records ──
+        modelBuilder.Entity<CommandRecordEntity>(e =>
+        {
+            e.ToTable("command_records");
+            e.HasKey(x => x.CommandId);
+            e.Property(x => x.CommandId).HasMaxLength(64);
+            e.Property(x => x.Type).HasMaxLength(32);
+            e.Property(x => x.SiteId).HasMaxLength(64).IsRequired();
+            e.Property(x => x.DeviceId).HasMaxLength(64).IsRequired();
+            e.Property(x => x.PointId).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(32);
+            e.Property(x => x.Error).HasMaxLength(512);
+            e.HasIndex(x => new { x.SiteId, x.Status });
         });
     }
 }
