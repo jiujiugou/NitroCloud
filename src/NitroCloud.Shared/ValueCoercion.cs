@@ -33,16 +33,38 @@ public static class ValueCoercion
             case JsonElement element:
                 return TryGetDouble(element, out result);
 
-            
-
             case string s:
                 return TryParseString(s, out result);
+
+            // C# 原生数值类型（直接来自 .NET 代码/测试，非 JSON 载荷）
+            case double d:
+                result = d;
+                return double.IsFinite(d);
+
+            case float f:
+                result = f;
+                return double.IsFinite(f);
+
+            case int i:
+                result = i;
+                return true;
+
+            case long l:
+                result = l;
+                return true;
+
+            case decimal m:
+                result = (double)m;
+                return double.IsFinite(result);
+
+            // C# 原生 bool → 1 / 0
+            case bool b:
+                result = b ? 1 : 0;
+                return true;
 
             default:
                 return false;
         }
-
-        return double.IsFinite(result);
     }
 
     private static bool TryGetDouble(
