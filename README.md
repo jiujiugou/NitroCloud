@@ -1,5 +1,7 @@
 # NitroCloud 设备上云中心平台
 
+![CI/CD](https://github.com/jiujiugou/NitroCloud/actions/workflows/ci.yml/badge.svg)
+
 订阅 N 个 NitroGateway 边缘网关的 MQTT 上行数据 → InfluxDB 时序存储 → Vue 3 实时大屏/管理面板 → 云端告警汇总 → 反向写值闭环（云 → 网关 → PLC，带回执）。
 
 技术栈：.NET 10 / ASP.NET Core · EMQX(MQTT) · InfluxDB 2.x · SQLite(EF Core) · SignalR · Vue 3 + Element Plus + ECharts · Docker Compose。设计基线见 [`DESIGN.md`](DESIGN.md)（v0.1 草案待评审），认识/设计文档见 [`docs/`](docs/README.md)，决策档案见 [`notes/ADR/`](notes/ADR/README.md)。
@@ -98,8 +100,25 @@ cd web && npm ci && npm run dev     # http://localhost:5173
 ## 现状
 
 - M1 骨架已落地：8 个后端模块 + Vue 3 前端 + 单元测试；`docker compose --profile full/demo` 可一条命令拉起全链路（DoD 1/2/3/4/6 可演示）。
-- **DoD 5（反向写值闭环）未完成**：`Command` 模块尚未实现（`slnx` 无该项目），`docker-compose.yml` 中的 `Command__*` 为前瞻配置。模拟网关已支持订阅命令并回执，云侧下发 API 与回执处理待 M3/M4 补齐。
+- **DoD 5（反向写值闭环）已完成**：云侧 `Command` 模块 + `POST /api/commands/write` + 回执闭环已落地（ADR-010）。端到端回执联调依赖 NitroGateway 命令处理器（已落地，ADR-069）/ mqtt-simulator 回执模拟（待补）。
 - 无登录鉴权（初版不涉及）；CORS 仅放行 dev 源，生产走 nginx 同源反代（已就绪）。
+
+## CI/CD（GitHub Actions + GHCR，ADR-011）
+
+流水线定义在 `.github/workflows/ci.yml`，单文件统一入口：
+
+- **CI（每次 push / PR）**：`build-server`（后端 build + 全量单测）+ `build-web`（vue-tsc 类型检查 + vite build）+ `validate-compose`（校验 `docker-compose.yml` 与 `docker-compose.cd.yml` 合并形态）。
+- **CD（仅 push master / `v*` tag 且 CI 全绿）**：`build-images` 用 Buildx 构建 `center`（`src/NitroCloud.Api/Dockerfile`）与 `web`（`web/Dockerfile`），推送到 `ghcr.io/jiujiugou/nitrocloud-{center,web}`。
+- **镜像 tag 策略**：`master` → `latest` + `sha-<7>`；`vX.Y.Z` tag → `vX.Y.Z` + `sha-<7>`（tag 即版本，发布可追溯）。
+
+部署机从 GHCR 拉取发布产物（不再现场构建，消除「本地能跑、部署机编译环境不一致」风险）：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cd.yml pull
+docker compose -f docker-compose.yml -f docker-compose.cd.yml up -d
+```
+
+`docker-compose.cd.yml` 仅覆盖镜像来源（`image:` + `build: !reset` + `pull_policy: always`），broker/influx/端口/卷/环境变量仍由 `docker-compose.yml` 定义；本地开发仍 `docker compose up -d`。
 
 ## 开发约定
 

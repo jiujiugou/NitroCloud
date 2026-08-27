@@ -11,7 +11,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# 先只拷贝 8 个项目的 .csproj 做 restore：csproj 未变时该层命中缓存，跳过网络 restore 加速重复构建
+# 先只拷贝 9 个项目的 .csproj 做 restore：csproj 未变时该层命中缓存，跳过网络 restore 加速重复构建
 COPY src/NitroCloud.Domain/NitroCloud.Domain.csproj            src/NitroCloud.Domain/
 COPY src/NitroCloud.Shared/NitroCloud.Shared.csproj            src/NitroCloud.Shared/
 COPY src/NitroCloud.Storage/NitroCloud.Storage.csproj          src/NitroCloud.Storage/
@@ -19,6 +19,7 @@ COPY src/NitroCloud.Telemetry/NitroCloud.Telemetry.csproj      src/NitroCloud.Te
 COPY src/NitroCloud.Persistence/NitroCloud.Persistence.csproj  src/NitroCloud.Persistence/
 COPY src/NitroCloud.Influx/NitroCloud.Influx.csproj            src/NitroCloud.Influx/
 COPY src/NitroCloud.Ingest/NitroCloud.Ingest.csproj            src/NitroCloud.Ingest/
+COPY src/NitroCloud.Command/NitroCloud.Command.csproj          src/NitroCloud.Command/
 COPY src/NitroCloud.Api/NitroCloud.Api.csproj                  src/NitroCloud.Api/
 
 RUN dotnet restore src/NitroCloud.Api/NitroCloud.Api.csproj

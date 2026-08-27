@@ -1,0 +1,22 @@
+# NitroCloud 部署机覆盖文件（CI/CD 产物，见 notes/ADR/deploy/ADR-011）
+#
+# 用法（部署机从 GHCR 拉取发布镜像，不再现场构建）：
+#   docker compose -f docker-compose.yml -f docker-compose.cd.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.cd.yml up -d
+#
+# 仅覆盖镜像来源（image + build: !reset + pull_policy: always，需 Compose v5.1.1+ 支持 !reset）；
+# broker/influx/端口/卷/环境变量仍由 docker-compose.yml 定义。
+# 本地开发仍 `docker compose up -d`（构建路径不变）。
+
+name: nitrocloud
+
+services:
+  center:
+    image: ghcr.io/jiujiugou/nitrocloud-center:latest
+    build: !reset
+    pull_policy: always
+
+  web:
+    image: ghcr.io/jiujiugou/nitrocloud-web:latest
+    build: !reset
+    pull_policy: always

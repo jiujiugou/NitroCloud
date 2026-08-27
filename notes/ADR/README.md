@@ -27,6 +27,9 @@
 ### web/
 - ADR-009 前端初版设计（大屏 + 管理面板）—— 已拍板、前端已落地｜读
 
+### deploy/
+- ADR-011 CI/CD 流水线（GitHub Actions + GHCR 镜像发布）—— 已拍板、待落码实施｜读
+
 ## 约定
 - 新 ADR 按模块归入 `notes/ADR/<模块>/ADR-NNN-标题.md`：模块名以 AGENTS.md 模块表为准；跨模块 → `architecture/`，CI/CD/运维 → `deploy/`，性能/数据量 → `performance/`，杂项 → `misc/`。不存在的模块目录自动创建，不预建空目录。
 - ADR 只记决策：问题 + 可选方案 + 决定 + 载荷墙 + 变更记录，一屏内；新增后在对应模块组加一行（一句话 + 状态 + 读不读）。
