@@ -33,9 +33,9 @@ public sealed class AlarmRecordEntity
     /// <summary>状态（AlarmState 枚举名）</summary>
     public string State { get; set; } = "Active";
 
-    /// <summary>发生时间（O 格式 UTC 字符串）</summary>
-    public string OccurredAt { get; set; } = "";
+    /// <summary>发生时间（UTC；落库时由 <see cref="Persistence.AppDbContext"/> 全局 ValueConverter 转 O 格式 UTC 字符串）</summary>
+    public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
 
-    /// <summary>云端确认时间（O 格式 UTC 字符串，null = 未确认）</summary>
-    public string? AckedAt { get; set; }
+    /// <summary>云端确认时间（UTC，null = 未确认）</summary>
+    public DateTime? AckedAt { get; set; }
 }

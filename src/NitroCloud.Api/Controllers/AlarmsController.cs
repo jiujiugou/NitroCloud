@@ -51,9 +51,9 @@ public sealed class AlarmsController : ControllerBase
 
         var now = DateTime.Now;
         var localTodayStart = new DateTime(now.Year, now.Month, now.Day);
-        var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(localTodayStart).ToString("O");
+        var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(localTodayStart);
         var today = await _db.AlarmRecords.AsNoTracking()
-            .CountAsync(a => string.CompareOrdinal(a.OccurredAt, todayStartUtc) >= 0, ct);
+            .CountAsync(a => a.OccurredAt >= todayStartUtc, ct);
 
         return Ok(ApiResponse<AlarmSummaryDto>.Ok(new AlarmSummaryDto(active, today)));
     }

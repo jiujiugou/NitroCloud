@@ -33,6 +33,7 @@
 
 ### persistence/
 - ADR-012 EF Core 列名统一按 snake_case 映射（对齐 FluentMigrator Schema）—— 已落地（AppDbContext.cs + 集成回归测试）｜读
+- ADR-014 alarm_records 时间字段由 string 改 DateTime（复用全局 ValueConverter）—— 已落地（实体/Store/Controller + 集成回归测试）｜读
 
 ## 约定
 - 新 ADR 按模块归入 `notes/ADR/<模块>/ADR-NNN-标题.md`：模块名以 AGENTS.md 模块表为准；跨模块 → `architecture/`，CI/CD/运维 → `deploy/`，性能/数据量 → `performance/`，杂项 → `misc/`。不存在的模块目录自动创建，不预建空目录。

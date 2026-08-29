@@ -57,9 +57,9 @@ public sealed class AlarmStore : IAlarmStore
         if (query.State.HasValue)
             q = q.Where(a => a.State == query.State.Value.ToString());
         if (query.From.HasValue)
-            q = q.Where(a => string.CompareOrdinal(a.OccurredAt, query.From.Value.ToUniversalTime().ToString("O")) >= 0);
+            q = q.Where(a => a.OccurredAt >= query.From.Value.ToUniversalTime());
         if (query.To.HasValue)
-            q = q.Where(a => string.CompareOrdinal(a.OccurredAt, query.To.Value.ToUniversalTime().ToString("O")) <= 0);
+            q = q.Where(a => a.OccurredAt <= query.To.Value.ToUniversalTime());
 
         var entities = await q
             .OrderByDescending(a => a.OccurredAt)
@@ -83,7 +83,7 @@ public sealed class AlarmStore : IAlarmStore
         if (entity.State != nameof(AlarmState.Resolved))
         {
             entity.State = nameof(AlarmState.Acknowledged);
-            entity.AckedAt = DateTime.UtcNow.ToString("O");
+            entity.AckedAt = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync(ct);
@@ -101,8 +101,8 @@ public sealed class AlarmStore : IAlarmStore
         Severity = a.Severity.ToString(),
         Message = a.Message,
         State = a.State.ToString(),
-        OccurredAt = a.OccurredAt.ToUniversalTime().ToString("O"),
-        AckedAt = a.AckedAt?.ToUniversalTime().ToString("O")
+        OccurredAt = a.OccurredAt.ToUniversalTime(),
+        AckedAt = a.AckedAt?.ToUniversalTime()
     };
 
     private static void ApplyToEntity(AlarmRecordEntity e, AlarmRecord a)
@@ -116,8 +116,8 @@ public sealed class AlarmStore : IAlarmStore
         e.Severity = a.Severity.ToString();
         e.Message = a.Message;
         e.State = a.State.ToString();
-        e.OccurredAt = a.OccurredAt.ToUniversalTime().ToString("O");
-        e.AckedAt = a.AckedAt?.ToUniversalTime().ToString("O");
+        e.OccurredAt = a.OccurredAt.ToUniversalTime();
+        e.AckedAt = a.AckedAt?.ToUniversalTime();
     }
 
     private static AlarmRecord ToDomain(AlarmRecordEntity e) => new()
@@ -132,9 +132,7 @@ public sealed class AlarmStore : IAlarmStore
         Severity = Enum.Parse<AlarmSeverity>(e.Severity),
         Message = e.Message,
         State = Enum.Parse<AlarmState>(e.State),
-        OccurredAt = DateTime.Parse(e.OccurredAt, null, System.Globalization.DateTimeStyles.AssumeUniversal),
-        AckedAt = e.AckedAt is null
-            ? null
-            : DateTime.Parse(e.AckedAt, null, System.Globalization.DateTimeStyles.AssumeUniversal)
+        OccurredAt = e.OccurredAt,
+        AckedAt = e.AckedAt
     };
 }
