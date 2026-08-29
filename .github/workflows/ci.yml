@@ -1,48 +1,60 @@
-# NitroCloud CI/CD（GitHub Actions + GHCR，见 notes/ADR/deploy/ADR-011）
+# NitroCloud Gitea CI/CD
 #
-# 触发：
-#   - push master / v* tag / pull_request 都进同一入口
-#   - PR 只跑 CI（build-server / build-web / validate-compose），不发布镜像
-#   - push master / v* tag 且 CI 全绿时，额外 build-images 构建并推送 GHCR
+# 架构：
+# Gitea → act_runner
+#   ├── CI：后端测试
+#   ├── CI：前端构建
+#   ├── CI：Compose 校验
+#   └── CD：Docker 构建并部署
 #
-# 镜像与 tag（ghcr.io/jiujiugou/nitrocloud-{center,web}）：
-#   - master    → latest + sha-<7>
-#   - vX.Y.Z    → vX.Y.Z + sha-<7>（tag 即版本，发布可追溯）
+# 不依赖 GitHub Actions 服务
+# 不依赖 GHCR
 #
-# 部署机（不再现场构建）：
-#   docker compose -f docker-compose.yml -f docker-compose.cd.yml pull
-#   docker compose -f docker-compose.yml -f docker-compose.cd.yml up -d
+# master：CI 全部通过 → 构建并部署
+# v* tag：CI 全部通过 → 构建并部署
+# Pull Request：只执行 CI，不部署
+#
+# 适配自建 Gitea + act_runner（配置见 D:\SelfHostCI\cloud）：
+# - runs-on 必须与 runner 注册标签一致：ubuntu-latest（docker://node:22-bookworm）
+# - runner 镜像内没有 .NET SDK / docker CLI，各 job 先安装
+# - act_runner 默认把宿主 /var/run/docker.sock 挂进 job 容器，装好 CLI 即可用宿主 daemon
+# - actions/checkout@v4 走 Gitea 默认 DEFAULT_ACTIONS_URL=github，需 runner 能访问 github.com
+# - CD 在 runner 宿主机本地构建并部署，不推 GHCR（docker-compose.cd.yml 仅留给外部部署机拉取）
 
-name: CI/CD
+name: NitroCloud CI/CD
 
 on:
   push:
-    branches: [master]
-    tags: ['v*']
+    branches:
+      - master
+    tags:
+      - 'v*'
   pull_request:
 
 permissions:
   contents: read
 
+# ============================================================
+# CI：后端
+# ============================================================
 jobs:
-  # ── CI 1/3：后端 build + 全量单测 ──
   build-server:
+    name: Backend Build & Test
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+      - name: Install .NET SDK
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl
+          curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir /opt/dotnet
+          ln -s /opt/dotnet/dotnet /usr/local/bin/dotnet
 
-      - name: Cache NuGet
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
+      - name: Show .NET version
+        run: dotnet --version
 
       - name: Restore
         run: dotnet restore NitroCloud.slnx
@@ -51,94 +63,144 @@ jobs:
         run: dotnet build NitroCloud.slnx -c Release --no-restore
 
       - name: Test
-        run: dotnet test tests/NitroCloud.UnitTests/NitroCloud.UnitTests.csproj -c Release --no-build
+        run: >
+          dotnet test
+          tests/NitroCloud.UnitTests/NitroCloud.UnitTests.csproj
+          -c Release
+          --no-build
 
-  # ── CI 2/3：前端 vue-tsc 类型检查 + vite build ──
+# ============================================================
+# CI：前端
+# ============================================================
   build-web:
+    name: Frontend Build
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: web
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+      - name: Show Node version
+        run: node --version
 
-      - name: Install
+      - name: Show npm version
+        run: npm --version
+
+      - name: Install dependencies
         run: npm ci
 
       - name: Build
         run: npm run build
 
-  # ── CI 3/3：compose 形态校验（只校验不运行）──
+# ============================================================
+# CI：Docker Compose 校验
+# ============================================================
   validate-compose:
+    name: Validate Docker Compose
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate docker-compose.yml
-        run: docker compose config -q
-      - name: Validate cd overlay
-        run: docker compose -f docker-compose.yml -f docker-compose.cd.yml config -q
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  # ── CD：构建 + 推送 GHCR（仅 master push / v* tag，且 CI 三档全绿）──
-  build-images:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
-    needs: [build-server, build-web, validate-compose]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compute image tags
-        id: meta
-        shell: bash
+      - name: Install Docker CLI
         run: |
-          SHA_SHORT="${GITHUB_SHA::7}"
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-          else
-            VERSION="latest"
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "sha=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl gnupg
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list
+          apt-get update
+          apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
 
-      - name: Build and push center
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: src/NitroCloud.Api/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/jiujiugou/nitrocloud-center:${{ steps.meta.outputs.version }}
-            ghcr.io/jiujiugou/nitrocloud-center:sha-${{ steps.meta.outputs.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Show Docker version
+        run: docker --version
 
-      - name: Build and push web
-        uses: docker/build-push-action@v6
-        with:
-          context: ./web
-          file: web/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/jiujiugou/nitrocloud-web:${{ steps.meta.outputs.version }}
-            ghcr.io/jiujiugou/nitrocloud-web:sha-${{ steps.meta.outputs.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Show Docker Compose version
+        run: docker compose version
+
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config -q
+
+      - name: Validate CD overlay
+        run: >
+          docker compose
+          -f docker-compose.yml
+          -f docker-compose.cd.yml
+          config -q
+
+# ============================================================
+# CD：构建并部署（runner 宿主机即部署机）
+# ============================================================
+  deploy:
+    name: Build & Deploy NitroCloud
+    runs-on: ubuntu-latest
+
+    needs:
+      - build-server
+      - build-web
+      - validate-compose
+
+    # PR 不部署
+    if: >
+      github.event_name == 'push' &&
+      (
+        github.ref == 'refs/heads/master' ||
+        startsWith(github.ref, 'refs/tags/v')
+      )
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Docker CLI
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl gnupg
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list
+          apt-get update
+          apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin
+
+      - name: Show Docker version
+        run: docker --version
+
+      - name: Show Docker Compose version
+        run: docker compose version
+
+      # --------------------------------------------------------
+      # 构建镜像（本地构建，不依赖 GHCR）
+      # --------------------------------------------------------
+      - name: Build NitroCloud Center
+        run: docker compose -f docker-compose.yml build center
+
+      - name: Build NitroCloud Web
+        run: docker compose -f docker-compose.yml build web
+
+      # --------------------------------------------------------
+      # 部署
+      # --------------------------------------------------------
+      - name: Deploy
+        run: >
+          docker compose
+          -f docker-compose.yml
+          up -d
+          --no-build
+          --remove-orphans
+
+      # --------------------------------------------------------
+      # 查看部署状态
+      # --------------------------------------------------------
+      - name: Show services
+        run: docker compose -f docker-compose.yml ps
+
+      # --------------------------------------------------------
+      # 清理旧镜像
+      # --------------------------------------------------------
+      - name: Cleanup
+        run: docker image prune -f
