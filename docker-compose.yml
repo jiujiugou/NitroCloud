@@ -113,9 +113,12 @@ services:
       Influx__Org: ${INFLUXDB_ORG:-nitrocloud}
       Influx__Bucket: ${INFLUXDB_BUCKET:-nitrocloud}
 
-      # MQTT
+      # MQTT（上行采集 Ingest + 下行回写 Command 都连 EMQX broker；
+      # 不覆盖则回落 appsettings.json 的 localhost —— 在容器内指向自身，连不上 broker）
       Ingest__MqttHost: broker
       Ingest__MqttPort: "1883"
+      Command__MqttHost: broker
+      Command__MqttPort: "1883"
 
       TZ: Asia/Shanghai
 

@@ -76,7 +76,7 @@ public interface ICommandStore
 - 订阅 `nitrogateway/+/+/commands/ack`（`TopicUtil.CommandAckSubscription`）。
 
 ### D7 配置与部署
-- 复用 `appsettings.json` `Command` 段；docker-compose `center` 环境补 `Command__MqttHost: broker` / `Command__MqttPort: "1883"`（对齐 Ingest，当前 compose 仅配了 Ingest__*）。
+- 复用 `appsettings.json` `Command` 段；docker-compose `center` 环境补 `Command__MqttHost: broker` / `Command__MqttPort: "1883"`（对齐 Ingest）。（2026-08-29 已补：此前 compose 仅配了 Ingest__*，Command 回落 localhost 导致容器内连不上 broker。）
 
 ### D8 跨项目前置与演示
 - 契约以 DESIGN.md §4.3 为准，云侧不单方面改；NitroGateway 需补 `commands` 订阅处理器 + 写值 + 回 `commands/ack`（跨项目小改动，属可接受，AGENTS.md 明示）。
