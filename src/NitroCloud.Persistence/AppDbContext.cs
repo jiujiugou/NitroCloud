@@ -32,6 +32,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>命令记录（回写闭环，ADR-010 D2）</summary>
     public DbSet<CommandRecordEntity> CommandRecords => Set<CommandRecordEntity>();
 
+    /// <summary>用户（登录账号，ADR-015 一层认证）</summary>
+    public DbSet<UserEntity> Users => Set<UserEntity>();
+
     /// <summary>创建上下文</summary>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -124,6 +127,19 @@ public sealed class AppDbContext : DbContext
             e.Property(x => x.Status).HasMaxLength(32);
             e.Property(x => x.Error).HasMaxLength(512);
             e.HasIndex(x => new { x.SiteId, x.Status });
+        });
+
+        // ── users ──
+        modelBuilder.Entity<UserEntity>(e =>
+        {
+            e.ToTable("users");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(64);
+            e.Property(x => x.Username).HasMaxLength(64).IsRequired();
+            e.Property(x => x.DisplayName).HasMaxLength(128);
+            e.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
+            e.Property(x => x.Role).HasMaxLength(32);
+            e.HasIndex(x => x.Username).IsUnique();
         });
     }
 

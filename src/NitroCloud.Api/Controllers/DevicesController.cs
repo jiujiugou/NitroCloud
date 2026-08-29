@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NitroCloud.Api.Dtos;
@@ -57,6 +58,7 @@ public sealed class DevicesController : ControllerBase
     }
 
     /// <summary>创建设备（SiteId 必填且站点须存在；Id 可选，缺省生成 Guid；重复 409）</summary>
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ApiResponse<DeviceDto>>> Create(DeviceRequestDto request)
     {
@@ -87,6 +89,7 @@ public sealed class DevicesController : ControllerBase
     }
 
     /// <summary>更新设备（部分更新：仅覆盖提供的字段；SiteId 变更须校验目标站点存在）</summary>
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<DeviceDto>>> Update(string id, DeviceRequestDto request)
     {
@@ -110,6 +113,7 @@ public sealed class DevicesController : ControllerBase
     }
 
     /// <summary>删除设备（设备下存在点位时 400 拒绝）</summary>
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string id)
     {

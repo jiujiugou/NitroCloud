@@ -1,5 +1,5 @@
 <template>
-  <div :class="['app-root', isAdmin ? 'theme-light is-admin' : 'theme-dark']">
+  <div :class="rootClass">
     <!-- 管理面板外壳：侧边导航 + 顶栏 + 内容区（ADR-009 D1 浅色 CRUD） -->
     <template v-if="isAdmin">
       <aside class="sidebar">
@@ -40,6 +40,9 @@
           <div class="topbar-right">
             <span class="status-dot" :class="hubConnected ? 'online' : 'offline'"></span>
             <span>{{ hubConnected ? '实时链路已连接' : '实时链路未连接' }}</span>
+            <span class="topbar-divider"></span>
+            <span class="topbar-user">{{ username }}</span>
+            <el-button size="small" plain type="danger" @click="onLogout">退出</el-button>
           </div>
         </header>
         <div class="content-area">
@@ -49,19 +52,38 @@
     </template>
 
     <!-- 大屏：全屏只读，无导航 chrome（ADR-009 D7） -->
+    <router-view v-else-if="isAuth" />
     <router-view v-else />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { hubConnected } from './api/signalr'
+import { useAuth } from './auth/useAuth'
 
 const route = useRoute()
+const router = useRouter()
+const { session, clearSession } = useAuth()
 
 const isAdmin = computed(() => route.meta.layout === 'admin')
+const isAuth = computed(() => route.meta.layout === 'auth')
 const pageTitle = computed(() => (route.meta.title as string) ?? 'NitroCloud')
+const username = computed(() => session.value?.username ?? '')
+
+// 外壳类名：管理面板浅色 + is-admin 外壳；登录页浅色无外壳；大屏深色（ADR-009 / ADR-015）。
+const rootClass = computed(() => {
+  if (isAdmin.value) return 'theme-light is-admin'
+  if (isAuth.value) return 'theme-light'
+  return 'theme-dark'
+})
+
+/** 退出登录：清理会话并回大屏（大屏匿名可看，ADR-015）。 */
+function onLogout(): void {
+  clearSession()
+  router.push('/dashboard')
+}
 </script>
 
 <style scoped>
@@ -110,5 +132,7 @@ const pageTitle = computed(() => (route.meta.title as string) ?? 'NitroCloud')
 .status-dot { width: 8px; height: 8px; border-radius: 50%; }
 .status-dot.online { background: var(--green); }
 .status-dot.offline { background: var(--orange); }
+.topbar-divider { width: 1px; height: 16px; background: var(--border); margin: 0 6px; }
+.topbar-user { font-weight: 600; color: var(--text-heading); }
 .content-area { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-primary); }
 </style>

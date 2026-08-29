@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NitroCloud.Api.Dtos;
@@ -33,6 +34,7 @@ public sealed class PointsController : ControllerBase
     }
 
     /// <summary>创建点位（DataType 枚举校验；Id 可选；未传 Access 默认只读）</summary>
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ApiResponse<PointDto>>> Create(string deviceId, PointRequestDto request)
     {
@@ -78,6 +80,7 @@ public sealed class PointsController : ControllerBase
     }
 
     /// <summary>更新点位（部分更新：仅覆盖提供的字段）</summary>
+    [Authorize]
     [HttpPut("{pointId}")]
     public async Task<ActionResult<ApiResponse<PointDto>>> Update(string deviceId, string pointId, PointRequestDto request)
     {
@@ -111,6 +114,7 @@ public sealed class PointsController : ControllerBase
     }
 
     /// <summary>删除点位</summary>
+    [Authorize]
     [HttpDelete("{pointId}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string deviceId, string pointId)
     {

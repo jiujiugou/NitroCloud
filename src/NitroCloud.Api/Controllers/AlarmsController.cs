@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
@@ -59,6 +60,7 @@ public sealed class AlarmsController : ControllerBase
     }
 
     /// <summary>确认告警（不存在的告警返回 404；body 可选，AckBy 默认 console）</summary>
+    [Authorize]
     [HttpPost("{id}/ack")]
     public async Task<ActionResult<ApiResponse<object>>> Ack(
         string id,

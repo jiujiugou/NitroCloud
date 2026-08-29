@@ -24,6 +24,9 @@ public sealed class CommandRecord
     /// <summary>写入值（数值型）</summary>
     public double Value { get; init; }
 
+    /// <summary>发起人（登录用户名，审计用，ADR-015）；由 Api 层写入</summary>
+    public string? RequestedBy { get; set; }
+
     /// <summary>发起时间（UTC）</summary>
     public DateTime RequestedAt { get; init; } = DateTime.UtcNow;
 

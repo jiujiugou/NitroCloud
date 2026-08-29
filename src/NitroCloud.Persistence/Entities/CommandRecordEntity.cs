@@ -24,6 +24,9 @@ public sealed class CommandRecordEntity
     /// <summary>写入值（数值型）</summary>
     public double Value { get; set; }
 
+    /// <summary>发起人（登录用户名，审计用，ADR-015）；存量命令为 null</summary>
+    public string? RequestedBy { get; set; }
+
     /// <summary>发起时间（O 格式 UTC 字符串）</summary>
     public string RequestedAt { get; set; } = "";
 

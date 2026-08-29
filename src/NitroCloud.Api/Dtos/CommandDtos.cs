@@ -56,6 +56,9 @@ public sealed record CommandRecordDto
     /// <summary>写入值</summary>
     public double Value { get; init; }
 
+    /// <summary>发起人（登录用户名，审计用，ADR-015）；存量命令为 null</summary>
+    public string? RequestedBy { get; init; }
+
     /// <summary>当前状态</summary>
     public required string Status { get; init; }
 

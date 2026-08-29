@@ -135,6 +135,8 @@ export interface CommandRecord {
   type: string
   value: unknown
   status: CommandStatus
+  /** 发起人（登录用户名，审计展示；存量命令为 null，ADR-015） */
+  requestedBy?: string
   requestedAt: string
   ackedAt?: string
   error?: string
@@ -152,6 +154,21 @@ export interface WriteValueResponse {
   commandId: string
   status: CommandStatus
   requestedAt: string
+}
+
+/** 登录请求（POST /api/auth/login，ADR-015） */
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+/** 登录响应（token 存 localStorage，走 Bearer 注入） */
+export interface LoginResponse {
+  token: string
+  username: string
+  role: string
+  /** 过期时间（UTC ISO） */
+  expiresAt: string
 }
 
 /** 回执（SignalR OnCommandAck / commands/ack topic，DESIGN.md §4.3） */

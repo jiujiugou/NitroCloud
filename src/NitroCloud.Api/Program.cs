@@ -1,13 +1,17 @@
 using System.Text.Json.Serialization;
 using NitroCloud.Api;
+using NitroCloud.Api.Auth;
 using NitroCloud.Api.HealthChecks;
 using NitroCloud.Api.Hubs;
 using NitroCloud.Api.Realtime;
 using NitroCloud.Command;
 using NitroCloud.Ingest;
 using NitroCloud.Influx;
+using NitroCloud.Persistence;
 using NitroCloud.Persistence.Sqlite;
 using NitroCloud.Storage;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Options;
 using Prometheus;
 using Serilog;
 
@@ -22,6 +26,13 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 // ── Api 选项（ADR-007 离线阈值 / ADR-005 最近值缓存容量）──
 builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection("Api"));
+
+// ── 认证（ADR-015 一层认证：登录态 + 命令下发校验/审计）──
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth"));
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddAuthentication(TokenAuthenticationDefaults.Scheme)
+    .AddScheme<AuthenticationSchemeOptions, TokenAuthenticationHandler>(TokenAuthenticationDefaults.Scheme, null);
+builder.Services.AddAuthorization();
 
 // ── CORS：仅允许前端 dev 源；SignalR 需要 AllowCredentials ──
 builder.Services.AddCors(o => o.AddPolicy("web", p => p
@@ -58,6 +69,15 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// ── 播种引导管理员（迁移已在 AddNitroSqlite 注册期执行，此处在迁移后）──
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var authOptions = scope.ServiceProvider.GetRequiredService<IOptions<AuthOptions>>().Value;
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("AuthSeeding");
+    AuthSeeding.EnsureAdmin(db, authOptions, logger);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -65,6 +85,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("web");
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapHealthChecks("/healthz", new() { Predicate = _ => true });
 app.MapMetrics();
 app.MapControllers();

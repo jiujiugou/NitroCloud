@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NitroCloud.Api.Dtos;
@@ -14,6 +15,7 @@ namespace NitroCloud.Api.Controllers;
 /// 前端 web/src/api/commands.ts 对齐。发布失败不改 Pending 语义，由后台扫描重发兜底。
 /// </summary>
 [ApiController, Route("api/commands")]
+[Authorize]
 public sealed class CommandsController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -61,6 +63,7 @@ public sealed class CommandsController : ControllerBase
             DeviceId = request.DeviceId,
             PointId = request.PointId,
             Value = request.Value,
+            RequestedBy = User.Identity?.Name ?? "unknown",
             RequestedAt = DateTime.UtcNow,
             Status = CommandStatus.Pending
         };

@@ -70,6 +70,7 @@ internal static class ApiMappings
             PointId = c.PointId,
             Type = c.Type,
             Value = c.Value,
+            RequestedBy = c.RequestedBy,
             Status = c.Status.ToString(),
             RequestedAt = c.RequestedAt.ToUniversalTime().ToString("O"),
             AckedAt = c.AckedAt?.ToUniversalTime().ToString("O"),

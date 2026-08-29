@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NitroCloud.Api.Dtos;
@@ -53,6 +54,7 @@ public sealed class SitesController : ControllerBase
     }
 
     /// <summary>创建站点（Id 可选，缺省生成 Guid；重复 409）</summary>
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ApiResponse<SiteDto>>> Create(SiteRequestDto request)
     {
@@ -86,6 +88,7 @@ public sealed class SitesController : ControllerBase
     }
 
     /// <summary>更新站点（部分更新：仅覆盖提供的字段）</summary>
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<SiteDto>>> Update(string id, SiteRequestDto request)
     {
@@ -110,6 +113,7 @@ public sealed class SitesController : ControllerBase
     }
 
     /// <summary>删除站点（站点下存在设备时 400 拒绝）</summary>
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string id)
     {

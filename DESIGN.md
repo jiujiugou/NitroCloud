@@ -191,6 +191,12 @@ NitroGateway 只覆盖了「边缘采集 + 转发」这一半，缺「云端接�
 - timestamp：取 `MeasurementRecord.Timestamp`
 - 保留策略：原始数据 30 天，可配置下采样（后续演进）
 
+### 5.3 权限管理（一层认证，ADR-015）
+- 范围：登录态（用户/密码 → 签名 Token）区分「登录/未登录」；管理面板 CRUD 与命令写值需登录；大屏匿名；不引入角色/权限点/用户管理页（完整 RBAC 留演进）。
+- 后端：`POST /api/auth/login` 校验密码（PBKDF2，BCL `Rfc2898DeriveBytes`，不引依赖包）→ 签发 HMAC-SHA256 签名 Token（自研，不引 JWT 包）；`[Authorize]` 保护 sites/devices/points/alarms/history/commands 控制器；命令写值在 `command_records.requested_by` 记录发起人（审计）。
+- 数据：`users` 表（FluentMigrator M006）；默认 admin 引导账号启动时按配置 `Auth:AdminUsername/AdminPassword` 播种（密码不落迁移），默认密码仅限本地开发，部署须环境变量覆盖。
+- 前端：登录页 `/login` + 路由守卫（`/admin/*` 未登录跳登录，大屏匿名）+ Bearer Token（localStorage，`client.ts` 已预留）+ 401 统一跳登录；认证状态用 composable 模块级响应式（不引 Pinia）。
+
 ---
 
 ## 6. 模块划分（项目结构）
