@@ -2,6 +2,9 @@
   <div class="point-row" :class="{ stale, active }" @click="$emit('select')">
     <span class="pr-name" :title="point.name">{{ point.name }}</span>
     <span class="pr-value mono">{{ text }}</span>
+    <span class="pr-access">
+      <el-tag :type="accessTag" size="small" effect="plain">{{ accessLabel }}</el-tag>
+    </span>
     <span v-if="quality" class="pr-quality">
       <el-tag :type="qualityTag" size="small" effect="plain">{{ quality }}</el-tag>
     </span>
@@ -32,6 +35,18 @@ const props = defineProps<{
 defineEmits<{ select: []; write: [] }>()
 
 const text = computed(() => fmtValue(props.value))
+// 权限标签（与 admin PointsView 文案一致）：只读/只写/读写
+const accessLabel = computed(() =>
+  ({ ReadOnly: '只读', WriteOnly: '只写', ReadWrite: '读写' } as Record<string, string>)[
+    props.point.access ?? 'ReadOnly'
+  ] ?? '-'
+)
+const accessTag = computed<'info' | 'warning' | 'success'>(() => {
+  const a = props.point.access
+  if (a === 'ReadWrite') return 'success'
+  if (a === 'WriteOnly') return 'warning'
+  return 'info'
+})
 const qualityTag = computed(() => {
   const q = props.quality
   if (q === 'Good' || !q) return 'success'
@@ -43,7 +58,7 @@ const qualityTag = computed(() => {
 <style scoped>
 .point-row {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: 1fr auto auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
@@ -57,5 +72,6 @@ const qualityTag = computed(() => {
 .pr-name { font-size: 12px; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pr-value { font-size: 14px; font-weight: 700; color: var(--accent); text-align: right; min-width: 52px; }
 .point-row.stale .pr-value { color: var(--text-muted); }
+.pr-access :deep(.el-tag) { font-size: 11px; }
 .pr-write { padding: 0 4px; min-width: 0; font-size: 12px; }
 </style>

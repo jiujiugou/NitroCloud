@@ -30,6 +30,12 @@ public sealed record MeasurementRecord
     /// <summary>数据类型（冗余字段，便于解析值）</summary>
     public DataType DataType { get; init; } = DataType.Float;
 
+    /// <summary>
+    /// 点位读写权限（上行契约字段，由网关快照透传）。旧版载荷缺省按只读兼容。
+    /// 自动注册据此回填 PointEntity.Writable（ReadWrite/WriteOnly → 可写）。
+    /// </summary>
+    public PointAccess Access { get; init; } = PointAccess.ReadOnly;
+
     /// <summary>采集时间戳（UTC，InfluxDB 写入时间基准）</summary>
     public DateTime Timestamp { get; init; }
 

@@ -63,7 +63,7 @@ public sealed class MetadataStore : IMetadataStore
 
             siteIds.Add(r.SiteId);
             deviceSites.TryAdd(r.DeviceId.ToString(), r.SiteId);
-            pointMeta.TryAdd(r.DevicePointId.ToString(), new PointMeta(r.DeviceId.ToString(), r.PointName, r.DataType));
+            pointMeta.TryAdd(r.DevicePointId.ToString(), new PointMeta(r.DeviceId.ToString(), r.PointName, r.DataType, r.Access));
         }
 
         // 2. 只处理缓存未命中的键（进程内幂等防抖）
@@ -109,7 +109,9 @@ public sealed class MetadataStore : IMetadataStore
                 Id = pointId,
                 DeviceId = meta.DeviceId,
                 Name = meta.Name,
-                DataType = meta.DataType.ToString()
+                DataType = meta.DataType.ToString(),
+                // 自动注册据上行载荷携带的权限回填可写性：ReadWrite/WriteOnly → 可写（前端据此显示写值按钮）
+                Writable = meta.Access is PointAccess.ReadWrite or PointAccess.WriteOnly
             });
 
         try
@@ -135,6 +137,6 @@ public sealed class MetadataStore : IMetadataStore
         foreach (var (pointId, _) in newPointMeta) _points.TryAdd(pointId, 0);
     }
 
-    /// <summary>点位注册所需的元数据（设备归属 + 名称 + 数据类型）</summary>
-    private readonly record struct PointMeta(string DeviceId, string Name, DataType DataType);
+    /// <summary>点位注册所需的元数据（设备归属 + 名称 + 数据类型 + 读写权限）</summary>
+    private readonly record struct PointMeta(string DeviceId, string Name, DataType DataType, PointAccess Access);
 }

@@ -17,13 +17,14 @@ public class MeasurementBatchParserTests
     private static byte[] Utf8(string json) => Encoding.UTF8.GetBytes(json);
 
     /// <summary>
-    /// 构造一批测量 JSON；v=null 表示缺省 v 字段；dataType/quality/timestamp 可注入以覆盖枚举双兼容与偏移时区。
+    /// 构造一批测量 JSON；v=null 表示缺省 v 字段；dataType/quality/access/timestamp 可注入以覆盖枚举双兼容与偏移时区。
     /// </summary>
     private static string BatchJson(string? v = "1", string siteId = "site-1",
         string dataType = "Float", string quality = "Good", string recordSiteId = "site-1",
-        string timestamp = "2026-08-23T01:00:00Z")
+        string timestamp = "2026-08-23T01:00:00Z", string? access = null)
     {
         var vField = v is null ? "" : $"\"v\": {v},";
+        var accessField = access is null ? "" : $"\"access\": {access},";
         return $$"""
             {
               {{vField}}
@@ -41,6 +42,7 @@ public class MeasurementBatchParserTests
                   "pointName": "Temp",
                   "value": 23.5,
                   "dataType": "{{dataType}}",
+                  {{accessField}}
                   "timestamp": "{{timestamp}}",
                   "receivedAt": "2026-08-23T01:00:00.100Z",
                   "quality": "{{quality}}"
@@ -131,6 +133,25 @@ public class MeasurementBatchParserTests
         var numeric = BatchJson().Replace("\"quality\": \"Good\"", "\"quality\": 2");
         var byNumber = parser.Parse(Utf8(numeric), "site-1");
         Assert.Equal(Quality.Bad, Assert.Single(byNumber.Batch!.Records).Quality);
+    }
+
+    /// <summary>Access 解析：网关默认发数字、也可发字符串；旧版缺省按只读兼容。</summary>
+    [Fact]
+    public void Parse_Access_AcceptsNumberStringAndDefaultsToReadOnly()
+    {
+        var parser = new MeasurementBatchParser();
+
+        // 网关默认把枚举序列化为数字：2 → ReadWrite
+        var byNumber = parser.Parse(Utf8(BatchJson(access: "2")), "site-1");
+        Assert.Equal(PointAccess.ReadWrite, Assert.Single(byNumber.Batch!.Records).Access);
+
+        // 字符串 "ReadOnly" → ReadOnly
+        var byName = parser.Parse(Utf8(BatchJson(access: "\"ReadOnly\"")), "site-1");
+        Assert.Equal(PointAccess.ReadOnly, Assert.Single(byName.Batch!.Records).Access);
+
+        // 旧版载荷缺省 access → ReadOnly（向后兼容，不误判为可写）
+        var missing = parser.Parse(Utf8(BatchJson()), "site-1");
+        Assert.Equal(PointAccess.ReadOnly, Assert.Single(missing.Batch!.Records).Access);
     }
 
     [Fact]
