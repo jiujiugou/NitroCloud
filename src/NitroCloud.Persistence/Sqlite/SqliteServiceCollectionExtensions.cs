@@ -24,6 +24,8 @@ public static class SqliteServiceCollectionExtensions
         services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IAlarmStore, AlarmStore>();
         services.AddScoped<ICommandStore, CommandStore>();
+        // 元数据自动注册（ADR-013）：单例，内部按操作开 scope 解析 scoped 的 AppDbContext
+        services.AddSingleton<IMetadataStore, MetadataStore>();
 
         // 启动时执行迁移（幂等）；失败快速失败，避免带不完整 Schema 起服务
         using var provider = services.BuildServiceProvider();

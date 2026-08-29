@@ -75,4 +75,11 @@ public sealed class IngestOptions
     /// 防 <see cref="TimeSpan"/> 溢出。消费方钳制为至少 1 秒。
     /// </summary>
     public int RetryBaseBackoffSeconds { get; set; } = 1;
+
+    /// <summary>
+    /// 测量数据到达时是否自动注册元数据（站点/设备/点位，ADR-013，默认 true）。
+    /// Ingest 在写时序库前幂等注册缺失的站点/设备/点位；best-effort——失败只记 Warning + 指标，不阻塞时序写入。
+    /// 设为 false 可退回 M2 手动 CRUD 模式（仅由管理面板/API 建元数据）。
+    /// </summary>
+    public bool AutoRegisterMetadata { get; set; } = true;
 }

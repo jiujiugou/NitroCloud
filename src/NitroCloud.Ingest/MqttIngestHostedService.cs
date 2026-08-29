@@ -32,6 +32,8 @@ public sealed class MqttIngestHostedService : BackgroundService
     private readonly IngestOptions _options;
     /// <summary>时序存储（InfluxDB 批量写入目标，唯一持久化出口）</summary>
     private readonly ITimeseriesStore _timeseries;
+    /// <summary>元数据自动注册（站点/设备/点位，ADR-013；best-effort，失败不阻塞时序写入）</summary>
+    private readonly IMetadataStore _metadataStore;
     /// <summary>实时推送接口（Api 用 SignalR 实现；缓存与推送共用同一接口）</summary>
     private readonly IRealtimeNotifier _notifier;
     /// <summary>服务作用域工厂：用于按操作解析 scoped 生命周期依赖（如 IAlarmStore），避免从根容器解析 scoped</summary>
@@ -66,6 +68,7 @@ public sealed class MqttIngestHostedService : BackgroundService
     /// </summary>
     /// <param name="options">Ingest 配置（经 <see cref="IngestOptions"/> 绑定 + 启动校验）</param>
     /// <param name="timeseries">时序存储（写 InfluxDB）</param>
+    /// <param name="metadataStore">元数据自动注册（幂等；<see cref="IngestOptions.AutoRegisterMetadata"/> 关闭时不调用）</param>
     /// <param name="cache">最近值缓存（注入管线，实时面板读内存）</param>
     /// <param name="notifier">实时推送接口（SignalR 实现）</param>
     /// <param name="scopeFactory">作用域工厂（告警存储按操作解析）</param>
@@ -73,6 +76,7 @@ public sealed class MqttIngestHostedService : BackgroundService
     public MqttIngestHostedService(
         IOptions<IngestOptions> options,
         ITimeseriesStore timeseries,
+        IMetadataStore metadataStore,
         ILatestValueCache cache,
         IRealtimeNotifier notifier,
         IServiceScopeFactory scopeFactory,
@@ -80,6 +84,7 @@ public sealed class MqttIngestHostedService : BackgroundService
     {
         _options = options.Value;
         _timeseries = timeseries;
+        _metadataStore = metadataStore;
         _notifier = notifier;
         _scopeFactory = scopeFactory;
         _logger = logger;
@@ -373,6 +378,22 @@ public sealed class MqttIngestHostedService : BackgroundService
             var batch = DrainPending(_options.FlushBatchSize);
             if (batch.Count == 0)
                 continue;
+
+            // 后台自动注册元数据（站点/设备/点位，ADR-013）：写时序前旁路调用，幂等。
+            // best-effort：失败只记 Warning + 指标，绝不阻塞时序写入（用户可见数据优先）。
+            if (_options.AutoRegisterMetadata)
+            {
+                try
+                {
+                    await _metadataStore.EnsureRegisteredAsync(batch, ct);
+                    CloudMetrics.IngestMetadataRegisterTotal.WithLabels("success").Inc();
+                }
+                catch (Exception ex)
+                {
+                    CloudMetrics.IngestMetadataRegisterTotal.WithLabels("failed").Inc();
+                    _logger.LogWarning(ex, "元数据自动注册失败（{Count} 条），不阻塞时序写入", batch.Count);
+                }
+            }
 
             var result = await _timeseries.WriteAsync(batch, ct);
             if (result.IsFailure)

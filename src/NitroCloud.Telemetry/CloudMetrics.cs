@@ -35,6 +35,15 @@ public static class CloudMetrics
         "cloud_ingest_realtime_failure_total",
         "Ingest 实时路径（最近值缓存/推送）失败次数");
 
+    /// <summary>
+    /// 元数据自动注册尝试总数（label: result = success/failed；按 flush 批次计，ADR-013）。
+    /// 失败仅记 Warning 不阻塞时序写入，观察此指标可发现元数据注册异常。
+    /// </summary>
+    public static readonly Counter IngestMetadataRegisterTotal = Metrics.CreateCounter(
+        "cloud_ingest_metadata_register_total",
+        "测量数据到达时自动注册元数据的尝试总数（按 flush 批次计）",
+        new CounterConfiguration { LabelNames = ["result"] });
+
     /// <summary>告警入库总数</summary>
     public static readonly Counter AlarmReceivedTotal = Metrics.CreateCounter(
         "cloud_alarm_received_total",

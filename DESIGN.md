@@ -179,6 +179,9 @@ NitroGateway 只覆盖了「边缘采集 + 转发」这一半，缺「云端接�
 ### 5.1 关系库（SQLite）
 - `sites` / `devices` / `points` / `alarm_records` / `users` / `roles`。
 - 结构变更走 **FluentMigrator** 迁移（沿用网关惯例），不手动改库。
+- 元数据自动注册（ADR-013）：Ingest 在写时序库前幂等注册测量记录中出现的站点/设备/点位
+  （站点/设备显示名用 Id 兜底，点位名/类型取测量记录），开关 `Ingest:AutoRegisterMetadata`（默认 true）；
+  与 M2 手动 CRUD 并存，管理面板仍可改名/补全。
 
 ### 5.2 InfluxDB 设计
 - bucket：`nitrocloud`
