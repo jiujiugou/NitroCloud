@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NitroCloud.Domain.Alarms;
@@ -57,6 +58,18 @@ public sealed class AppDbContext : DbContext
             }
         }
 
+        // ── 列名映射（ADR-012）：EF Core 默认按属性名(PascalCase)生成列名，而建表走 FluentMigrator 为
+        //    snake_case（command_id/site_id/requested_at…），不一致会报 `no such column: c.XXX`。
+        //    统一按属性名转 snake_case 对齐：零依赖、不动库；个别列需特例时用 HasColumnName 覆盖（本循环在前，显式配置后写优先）。
+        var snakeCaseEntityTypes = modelBuilder.Model.GetEntityTypes();
+        foreach (var entityType in snakeCaseEntityTypes)
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                property.SetColumnName(ToSnakeCase(property.Name));
+            }
+        }
+
         // ── sites ──
         modelBuilder.Entity<SiteEntity>(e =>
         {
@@ -112,5 +125,23 @@ public sealed class AppDbContext : DbContext
             e.Property(x => x.Error).HasMaxLength(512);
             e.HasIndex(x => new { x.SiteId, x.Status });
         });
+    }
+
+    /// <summary>
+    /// PascalCase → snake_case 列名：CommandId→command_id、DataType→data_type、Id→id。
+    /// 供 <see cref="OnModelCreating"/> 全局列名映射使用（ADR-012）。
+    /// </summary>
+    /// <param name="name">CLR 属性名（PascalCase）。</param>
+    /// <returns>snake_case 列名。</returns>
+    private static string ToSnakeCase(string name)
+    {
+        var sb = new StringBuilder(name.Length + 4);
+        for (var i = 0; i < name.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(name[i]) && (char.IsLower(name[i - 1]) || char.IsDigit(name[i - 1])))
+                sb.Append('_');
+            sb.Append(char.ToLowerInvariant(name[i]));
+        }
+        return sb.ToString();
     }
 }
