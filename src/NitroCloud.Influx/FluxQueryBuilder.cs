@@ -16,12 +16,15 @@ public static class FluxQueryBuilder
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var start = query.From.ToUniversalTime().ToString("O");
-        var stop = query.To.ToUniversalTime().ToString("O");
+        if (query.From > query.To)
+            throw new ArgumentException("From 不能晚于 To（空时间窗）", nameof(query));
+
+        var start = FormatTimeLiteral(query.From);
+        var stop = FormatTimeLiteral(query.To);
 
         var flux = new System.Text.StringBuilder()
             .Append("from(bucket: \"").Append(EscapeDoubleQuoted(bucket)).Append("\")")
-            .Append("\n  |> range(start: ").Append(Rfc3339(start)).Append(", stop: ").Append(Rfc3339(stop)).Append(')')
+            .Append("\n  |> range(start: ").Append(start).Append(", stop: ").Append(stop).Append(')')
             .Append("\n  |> filter(fn: (r) => r._measurement == \"").Append(EscapeDoubleQuoted(measurement)).Append("\")")
             .Append("\n  |> filter(fn: (r) => r.siteId == \"").Append(EscapeDoubleQuoted(query.SiteId)).Append("\")");
 
@@ -38,12 +41,13 @@ public static class FluxQueryBuilder
         return flux.ToString();
     }
 
-    /// <summary>把 O 格式时间转为 Flux 可用的 RFC3339（去掉末尾的 Z 后保留）</summary>
-    private static string Rfc3339(string isoO)
-    {
-        // DateTime.ToString("O") 输出形如 2026-08-23T10:00:00.0000000Z，Flux 可直接解析
-        return "\"" + isoO + "\"";
-    }
+    /// <summary>
+    /// 把 <see cref="DateTime"/> 转为 Flux 的 time 字面量：RFC3339 UTC（不带引号）。
+    /// 注意：Flux 中带引号的 "2026-08-23T...Z" 会被解析为 string，range(start, stop)
+    /// 会报 "value is not a time, got string"；裸时间戳才是 time 字面量。
+    /// </summary>
+    private static string FormatTimeLiteral(DateTime value)
+        => value.ToUniversalTime().ToString("O");
 
     /// <summary>转义 Flux 双引号字符串内的引号</summary>
     private static string EscapeDoubleQuoted(string value)
