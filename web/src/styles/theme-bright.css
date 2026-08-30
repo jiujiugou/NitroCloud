@@ -1,0 +1,29 @@
+/* 明亮主题（/dashboard 大屏）——ADR-009 D1：主题走 CSS variables。
+   明亮和谐取向：浅蓝灰底 + 白卡片 + 柔和阴影，点缀色保持高辨识度。 */
+.theme-bright {
+  --bg-primary: #eef2f7;
+  --bg-gradient: linear-gradient(180deg, #f4f8fd 0%, #edf1f8 55%, #e8eef6 100%);
+  --bg-card: #ffffff;
+  --bg-card-2: #f4f7fb;
+  --bg-hover: #eaf1fb;
+  --border: #e2e9f2;
+  --border-strong: #c6d3e4;
+  --text: #45536a;
+  --text-muted: #8b98ab;
+  --text-heading: #1d2b3f;
+  --accent: #2f7fe8;
+  --accent-dim: #2567c2;
+  --green: #21b573;
+  --red: #ee5f66;
+  --orange: #ef8a2b;
+  --yellow: #dfa20c;
+  --purple: #8b6cf0;
+  --cyan: #16a7b8;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(29, 43, 63, .07), 0 1px 3px rgba(29, 43, 63, .05);
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* 明亮大屏下的 Element Plus 文字色微调（弹窗/表单标签对齐主题文本色） */
+.theme-bright .el-dialog__body { color: var(--text); }
+.theme-bright .el-form-item__label { color: var(--text) !important; }

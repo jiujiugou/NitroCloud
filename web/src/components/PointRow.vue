@@ -68,7 +68,7 @@ const qualityTag = computed(() => {
 }
 .point-row:last-child { border-bottom: none; }
 .point-row:hover { background: var(--bg-hover); }
-.point-row.active { background: rgba(64, 158, 255, .08); box-shadow: inset 2px 0 0 var(--accent); }
+.point-row.active { background: color-mix(in srgb, var(--accent) 9%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
 .pr-name { font-size: 12px; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pr-value { font-size: 14px; font-weight: 700; color: var(--accent); text-align: right; min-width: 52px; }
 .point-row.stale .pr-value { color: var(--text-muted); }

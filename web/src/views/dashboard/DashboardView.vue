@@ -430,7 +430,7 @@ onUnmounted(() => {
     "points chart alarms";
   gap: 12px;
   padding: 12px;
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
   color: var(--text);
   overflow: hidden;
 }

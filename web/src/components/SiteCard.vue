@@ -43,14 +43,14 @@ const statusText = computed(() => {
   cursor: pointer;
   transition: border-color .15s, box-shadow .15s;
 }
-.site-card:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, .25); }
+.site-card:hover { box-shadow: 0 4px 14px rgba(29, 43, 63, .1); }
 .site-card.online { border-left-color: var(--green); }
 .site-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .sc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sc-name { font-weight: 600; font-size: 14px; color: var(--text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sc-status { font-size: 11px; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
-.sc-status.ok { background: rgba(63, 185, 80, .15); color: var(--green); }
-.sc-status.off { background: rgba(248, 81, 73, .15); color: var(--red); }
+.sc-status.ok { background: color-mix(in srgb, var(--green) 13%, #ffffff); color: var(--green); }
+.sc-status.off { background: color-mix(in srgb, var(--red) 13%, #ffffff); color: var(--red); }
 .sc-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
 .sc-alarms.has { color: var(--orange); font-weight: 600; }
 </style>

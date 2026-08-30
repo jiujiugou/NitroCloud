@@ -1,5 +1,5 @@
 <template>
-  <div :class="rootClass">
+  <div class="app-root" :class="rootClass">
     <!-- 管理面板外壳：侧边导航 + 顶栏 + 内容区（ADR-009 D1 浅色 CRUD） -->
     <template v-if="isAdmin">
       <aside class="sidebar">
@@ -72,11 +72,11 @@ const isAuth = computed(() => route.meta.layout === 'auth')
 const pageTitle = computed(() => (route.meta.title as string) ?? 'NitroCloud')
 const username = computed(() => session.value?.username ?? '')
 
-// 外壳类名：管理面板浅色 + is-admin 外壳；登录页浅色无外壳；大屏深色（ADR-009 / ADR-015）。
+// 外壳类名：管理面板浅色 + is-admin 外壳；登录页浅色无外壳；大屏明亮主题（ADR-009 / ADR-015）。
 const rootClass = computed(() => {
   if (isAdmin.value) return 'theme-light is-admin'
   if (isAuth.value) return 'theme-light'
-  return 'theme-dark'
+  return 'theme-bright'
 })
 
 /** 退出登录：清理会话并回大屏（大屏匿名可看，ADR-015）。 */

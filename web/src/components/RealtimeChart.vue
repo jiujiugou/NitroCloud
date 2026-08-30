@@ -23,7 +23,7 @@ const chartRef = ref<HTMLElement>()
 let chart: ReturnType<typeof echarts.init> | null = null
 let redrawTimer: ReturnType<typeof setTimeout> | undefined
 
-// 读当前主题的文本色（主题变量定义在 .theme-dark/.theme-light 根容器上，chart 元素继承）
+// 读当前主题的文本色（主题变量定义在 .theme-dark/.theme-light/.theme-bright 根容器上，chart 元素继承）
 function cssVar(name: string): string {
   if (!chartRef.value) return '#8b949e'
   return getComputedStyle(chartRef.value).getPropertyValue(name).trim() || '#8b949e'
