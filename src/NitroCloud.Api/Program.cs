@@ -27,6 +27,9 @@ builder.Host.UseSerilog((context, services, configuration) =>
 // ── Api 选项（ADR-007 离线阈值 / ADR-005 最近值缓存容量）──
 builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection("Api"));
 
+// ── 元数据管理约束（ADR-017：默认只读，POST/DELETE 需 AllowManualCreate=true）──
+builder.Services.Configure<MetadataOptions>(builder.Configuration.GetSection("Metadata"));
+
 // ── 认证（ADR-015 一层认证：登录态 + 命令下发校验/审计）──
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth"));
 builder.Services.AddSingleton<TokenService>();

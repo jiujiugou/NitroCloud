@@ -3,11 +3,8 @@
     <div class="page-head">
       <div>
         <div class="page-title">设备管理</div>
-        <div class="page-desc">维护站点下的设备元数据（型号/在线状态）。</div>
+        <div class="page-desc">设备由网关上行数据自动注册（ADR-013），仅可改名/补全，不可新增/删除（ADR-017）。</div>
       </div>
-      <el-button type="primary" @click="openCreate">
-        <el-icon style="margin-right: 4px"><Plus /></el-icon>新建设备
-      </el-button>
     </div>
 
     <el-card shadow="never">
@@ -37,13 +34,12 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialog.visible" :title="dialog.isEdit ? '编辑设备' : '新建设备'" width="480">
+    <el-dialog v-model="dialog.visible" title="编辑设备" width="480">
       <el-form :model="form" label-width="80px">
         <el-form-item label="所属站点" required>
           <el-select v-model="form.siteId" placeholder="选择站点" style="width: 100%">
@@ -67,9 +63,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { createDevice, deleteDevice, getAllDevices, updateDevice } from '../../api/devices'
+import { ElMessage } from 'element-plus'
+import { getAllDevices, updateDevice } from '../../api/devices'
 import { getSites } from '../../api/sites'
 import type { Device, Site } from '../../api/types'
 import { fmtTime, onlineTag, statusText } from '../../utils/format'
@@ -79,7 +74,7 @@ const rows = ref<Device[]>([])
 const siteFilter = ref('')
 const loading = ref(false)
 const saving = ref(false)
-const dialog = reactive({ visible: false, isEdit: false, id: '' })
+const dialog = reactive({ visible: false, id: '' })
 const form = reactive({ siteId: '', name: '', model: '' })
 
 const filtered = computed(() =>
@@ -99,17 +94,7 @@ async function load(): Promise<void> {
   loading.value = false
 }
 
-function openCreate(): void {
-  dialog.isEdit = false
-  dialog.id = ''
-  form.siteId = siteFilter.value
-  form.name = ''
-  form.model = ''
-  dialog.visible = true
-}
-
 function openEdit(d: Device): void {
-  dialog.isEdit = true
   dialog.id = d.id
   form.siteId = d.siteId
   form.name = d.name
@@ -128,33 +113,12 @@ async function save(): Promise<void> {
   }
   saving.value = true
   try {
-    if (dialog.isEdit) {
-      await updateDevice(dialog.id, { siteId: form.siteId, name: form.name.trim(), model: form.model.trim() || undefined })
-    } else {
-      await createDevice({ siteId: form.siteId, name: form.name.trim(), model: form.model.trim() || undefined })
-    }
+    await updateDevice(dialog.id, { siteId: form.siteId, name: form.name.trim(), model: form.model.trim() || undefined })
     ElMessage.success('已保存')
     dialog.visible = false
     await load()
   } catch { /* 拦截器已提示 */ }
   saving.value = false
-}
-
-async function remove(d: Device): Promise<void> {
-  try {
-    await ElMessageBox.confirm(`确定删除设备「${d.name}」？其下点位元数据将一并删除。`, '删除确认', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消'
-    })
-  } catch {
-    return
-  }
-  try {
-    await deleteDevice(d.id)
-    ElMessage.success('已删除')
-    await load()
-  } catch { /* 拦截器已提示 */ }
 }
 
 onMounted(load)

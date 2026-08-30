@@ -6,6 +6,7 @@ using NitroCloud.Api.Models;
 using NitroCloud.Domain.Devices;
 using NitroCloud.Persistence;
 using NitroCloud.Persistence.Entities;
+using Microsoft.Extensions.Options;
 
 namespace NitroCloud.Api.Controllers;
 
@@ -17,9 +18,14 @@ namespace NitroCloud.Api.Controllers;
 public sealed class PointsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly MetadataOptions _metadata;
 
     /// <summary>创建控制器</summary>
-    public PointsController(AppDbContext db) => _db = db;
+    public PointsController(AppDbContext db, IOptions<MetadataOptions> metadata)
+    {
+        _db = db;
+        _metadata = metadata.Value;
+    }
 
     /// <summary>设备下点位列表</summary>
     [HttpGet]
@@ -38,6 +44,9 @@ public sealed class PointsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<PointDto>>> Create(string deviceId, PointRequestDto request)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<PointDto>.Fail("MetadataReadOnly", "点位元数据由上行数据自动注册驱动，不支持手动新增"));
+
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(ApiResponse<PointDto>.Fail("InvalidName", "点位名称必填"));
 
@@ -118,6 +127,9 @@ public sealed class PointsController : ControllerBase
     [HttpDelete("{pointId}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string deviceId, string pointId)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<object>.Fail("MetadataReadOnly", "点位元数据由上行数据自动注册驱动，不支持手动删除"));
+
         var entity = await _db.Points.FirstOrDefaultAsync(p => p.Id == pointId && p.DeviceId == deviceId);
         if (entity is null)
             return NotFound(ApiResponse<object>.Fail("PointNotFound", $"点位 {pointId} 不存在或不属于设备 {deviceId}"));

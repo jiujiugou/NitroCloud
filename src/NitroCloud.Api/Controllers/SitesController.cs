@@ -8,6 +8,7 @@ using NitroCloud.Persistence;
 using NitroCloud.Persistence.Entities;
 using NitroCloud.Storage;
 using NitroCloud.Storage.Models;
+using Microsoft.Extensions.Options;
 
 namespace NitroCloud.Api.Controllers;
 
@@ -22,13 +23,15 @@ public sealed class SitesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly ILatestValueCache _cache;
     private readonly OnlineStatusService _status;
+    private readonly MetadataOptions _metadata;
 
     /// <summary>创建控制器</summary>
-    public SitesController(AppDbContext db, ILatestValueCache cache, OnlineStatusService status)
+    public SitesController(AppDbContext db, ILatestValueCache cache, OnlineStatusService status, IOptions<MetadataOptions> metadata)
     {
         _db = db;
         _cache = cache;
         _status = status;
+        _metadata = metadata.Value;
     }
 
     /// <summary>站点列表（含在线状态 / 最后上报）</summary>
@@ -58,6 +61,9 @@ public sealed class SitesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<SiteDto>>> Create(SiteRequestDto request)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<SiteDto>.Fail("MetadataReadOnly", "站点元数据由上行数据自动注册驱动，不支持手动新增"));
+
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(ApiResponse<SiteDto>.Fail("InvalidName", "站点名称必填"));
 
@@ -117,6 +123,9 @@ public sealed class SitesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string id)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<object>.Fail("MetadataReadOnly", "站点元数据由上行数据自动注册驱动，不支持手动删除"));
+
         var entity = await _db.Sites.FirstOrDefaultAsync(s => s.Id == id);
         if (entity is null)
             return NotFound(ApiResponse<object>.Fail("SiteNotFound", $"站点 {id} 不存在"));

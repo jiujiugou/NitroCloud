@@ -3,11 +3,8 @@
     <div class="page-head">
       <div>
         <div class="page-title">点位管理</div>
-        <div class="page-desc">维护设备下的点位元数据（数据类型/访问权限/告警开关）。</div>
+        <div class="page-desc">点位由网关上行数据自动注册（ADR-013），仅可改名/补全，不可新增/删除（ADR-017）；写值在大屏操作。</div>
       </div>
-      <el-button type="primary" :disabled="!deviceId" @click="openCreate">
-        <el-icon style="margin-right: 4px"><Plus /></el-icon>新建点位
-      </el-button>
     </div>
 
     <el-card shadow="never">
@@ -47,13 +44,12 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialog.visible" :title="dialog.isEdit ? '编辑点位' : '新建点位'" width="500">
+    <el-dialog v-model="dialog.visible" title="编辑点位" width="500">
       <el-form :model="form" label-width="90px">
         <el-form-item label="所属设备" required>
           <el-select v-model="form.deviceId" placeholder="选择设备" style="width: 100%">
@@ -93,11 +89,10 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { getSites } from '../../api/sites'
 import { getSiteDevices } from '../../api/devices'
-import { createPoint, deletePoint, getDevicePoints, updatePoint } from '../../api/points'
+import { getDevicePoints, updatePoint } from '../../api/points'
 import type { DataType, Device, Point, PointAccess, Site } from '../../api/types'
 
 const dataTypes: DataType[] = ['Bool', 'Byte', 'Int16', 'UInt16', 'Int32', 'UInt32', 'Int64', 'UInt64', 'Float', 'Double', 'String']
@@ -110,7 +105,7 @@ const siteId = ref('')
 const deviceId = ref('')
 const loading = ref(false)
 const saving = ref(false)
-const dialog = reactive({ visible: false, isEdit: false, pointId: '' })
+const dialog = reactive({ visible: false, pointId: '' })
 const form = reactive({
   deviceId: '',
   name: '',
@@ -160,21 +155,7 @@ async function load(): Promise<void> {
   } catch { /* 拦截器已提示 */ }
 }
 
-function openCreate(): void {
-  dialog.isEdit = false
-  dialog.pointId = ''
-  form.deviceId = deviceId.value
-  form.name = ''
-  form.dataType = 'Float'
-  form.unit = ''
-  form.access = 'ReadOnly'
-  form.alarmEnabled = false
-  form.enabled = true
-  dialog.visible = true
-}
-
 function openEdit(p: Point): void {
-  dialog.isEdit = true
   dialog.pointId = p.id
   form.deviceId = p.deviceId
   form.name = p.name
@@ -197,47 +178,19 @@ async function save(): Promise<void> {
   }
   saving.value = true
   try {
-    if (dialog.isEdit) {
-      await updatePoint(form.deviceId, dialog.pointId, {
-        name: form.name.trim(),
-        dataType: form.dataType,
-        unit: form.unit.trim() || undefined,
-        access: form.access,
-        alarmEnabled: form.alarmEnabled,
-        enabled: form.enabled
-      })
-    } else {
-      await createPoint(form.deviceId, {
-        name: form.name.trim(),
-        dataType: form.dataType,
-        unit: form.unit.trim() || undefined,
-        access: form.access,
-        alarmEnabled: form.alarmEnabled,
-        enabled: form.enabled
-      })
-    }
+    await updatePoint(form.deviceId, dialog.pointId, {
+      name: form.name.trim(),
+      dataType: form.dataType,
+      unit: form.unit.trim() || undefined,
+      access: form.access,
+      alarmEnabled: form.alarmEnabled,
+      enabled: form.enabled
+    })
     ElMessage.success('已保存')
     dialog.visible = false
     if (form.deviceId === deviceId.value) await onDeviceChange(deviceId.value)
   } catch { /* 拦截器已提示 */ }
   saving.value = false
-}
-
-async function remove(p: Point): Promise<void> {
-  try {
-    await ElMessageBox.confirm(`确定删除点位「${p.name}」？`, '删除确认', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消'
-    })
-  } catch {
-    return
-  }
-  try {
-    await deletePoint(p.deviceId, p.id)
-    ElMessage.success('已删除')
-    await onDeviceChange(deviceId.value)
-  } catch { /* 拦截器已提示 */ }
 }
 
 onMounted(load)

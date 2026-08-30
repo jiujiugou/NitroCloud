@@ -6,6 +6,7 @@ using NitroCloud.Api.Models;
 using NitroCloud.Api.Realtime;
 using NitroCloud.Persistence;
 using NitroCloud.Persistence.Entities;
+using Microsoft.Extensions.Options;
 
 namespace NitroCloud.Api.Controllers;
 
@@ -18,12 +19,14 @@ public sealed class DevicesController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly OnlineStatusService _status;
+    private readonly MetadataOptions _metadata;
 
     /// <summary>创建控制器</summary>
-    public DevicesController(AppDbContext db, OnlineStatusService status)
+    public DevicesController(AppDbContext db, OnlineStatusService status, IOptions<MetadataOptions> metadata)
     {
         _db = db;
         _status = status;
+        _metadata = metadata.Value;
     }
 
     /// <summary>全部设备（管理面板点位视图按设备过滤用；初版不分页）</summary>
@@ -62,6 +65,9 @@ public sealed class DevicesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<DeviceDto>>> Create(DeviceRequestDto request)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<DeviceDto>.Fail("MetadataReadOnly", "设备元数据由上行数据自动注册驱动，不支持手动新增"));
+
         if (string.IsNullOrWhiteSpace(request.SiteId))
             return BadRequest(ApiResponse<DeviceDto>.Fail("InvalidSiteId", "设备所属站点必填"));
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -117,6 +123,9 @@ public sealed class DevicesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(string id)
     {
+        if (!_metadata.AllowManualCreate)
+            return StatusCode(403, ApiResponse<object>.Fail("MetadataReadOnly", "设备元数据由上行数据自动注册驱动，不支持手动删除"));
+
         var entity = await _db.Devices.FirstOrDefaultAsync(d => d.Id == id);
         if (entity is null)
             return NotFound(ApiResponse<object>.Fail("DeviceNotFound", $"设备 {id} 不存在"));

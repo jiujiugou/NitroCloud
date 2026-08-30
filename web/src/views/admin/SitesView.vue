@@ -3,11 +3,8 @@
     <div class="page-head">
       <div>
         <div class="page-title">站点管理</div>
-        <div class="page-desc">维护上云站点（网关维度）元数据；离线判定以「最后上报时间 + 阈值」为准（ADR-007）。</div>
+        <div class="page-desc">站点由网关上行数据自动注册（ADR-013），仅可改名/补全，不可新增/删除（ADR-017）。</div>
       </div>
-      <el-button type="primary" @click="openCreate">
-        <el-icon style="margin-right: 4px"><Plus /></el-icon>新建站点
-      </el-button>
     </div>
 
     <el-card shadow="never">
@@ -34,13 +31,12 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="dialog.visible" :title="dialog.isEdit ? '编辑站点' : '新建站点'" width="460">
+    <el-dialog v-model="dialog.visible" title="编辑站点" width="460">
       <el-form :model="form" label-width="70px">
         <el-form-item label="名称" required>
           <el-input v-model="form.name" placeholder="例如：上海一厂" />
@@ -59,16 +55,15 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { createSite, deleteSite, getSites, updateSite } from '../../api/sites'
+import { ElMessage } from 'element-plus'
+import { getSites, updateSite } from '../../api/sites'
 import type { Site } from '../../api/types'
 import { fmtTime, onlineTag, statusText } from '../../utils/format'
 
 const rows = ref<Site[]>([])
 const loading = ref(false)
 const saving = ref(false)
-const dialog = reactive({ visible: false, isEdit: false, id: '' })
+const dialog = reactive({ visible: false, id: '' })
 const form = reactive({ name: '', location: '' })
 
 async function load(): Promise<void> {
@@ -79,16 +74,7 @@ async function load(): Promise<void> {
   loading.value = false
 }
 
-function openCreate(): void {
-  dialog.isEdit = false
-  dialog.id = ''
-  form.name = ''
-  form.location = ''
-  dialog.visible = true
-}
-
 function openEdit(s: Site): void {
-  dialog.isEdit = true
   dialog.id = s.id
   form.name = s.name
   form.location = s.location ?? ''
@@ -102,33 +88,12 @@ async function save(): Promise<void> {
   }
   saving.value = true
   try {
-    if (dialog.isEdit) {
-      await updateSite(dialog.id, { name: form.name.trim(), location: form.location.trim() || undefined })
-    } else {
-      await createSite({ name: form.name.trim(), location: form.location.trim() || undefined })
-    }
+    await updateSite(dialog.id, { name: form.name.trim(), location: form.location.trim() || undefined })
     ElMessage.success('已保存')
     dialog.visible = false
     await load()
   } catch { /* 拦截器已提示 */ }
   saving.value = false
-}
-
-async function remove(s: Site): Promise<void> {
-  try {
-    await ElMessageBox.confirm(`确定删除站点「${s.name}」？其下设备/点位元数据将一并删除。`, '删除确认', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消'
-    })
-  } catch {
-    return
-  }
-  try {
-    await deleteSite(s.id)
-    ElMessage.success('已删除')
-    await load()
-  } catch { /* 拦截器已提示 */ }
 }
 
 onMounted(load)
