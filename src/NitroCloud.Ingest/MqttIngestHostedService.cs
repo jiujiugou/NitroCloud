@@ -201,58 +201,14 @@ public sealed class MqttIngestHostedService : BackgroundService
     }
 
     /// <summary>
-    /// 连接 broker + 订阅（带连接状态判定）：
-    /// 成功 = 已连接并订阅成功，返回 <see cref="OperationResult.Success"/>；
-    /// 失败 = 返回携带 <see cref="OperationalError"/>（Communication）的失败结果，不抛异常（供 Polly 重试）。
-    /// 取消令牌触发时原样抛出 <see cref="OperationCanceledException"/>。
+    /// 连接 broker + 订阅的宿主侧薄封装：把当前客户端与配置转交
+    /// <see cref="IngestMqttConnection.ConnectAndSubscribeAsync"/>（便于单测的静态实现）。
+    /// 已连接时只补订阅、不重复 ConnectAsync——避免 MQTTnet 对已连接客户端调用 ConnectAsync 抛
+    /// "It is not allowed to connect with a server after the connection is established."。
     /// </summary>
     /// <param name="ct">取消令牌；连接/订阅任一环节取消时原样上抛</param>
-    private async Task<OperationResult> ConnectAndSubscribeAsync(CancellationToken ct)
-    {
-        try
-        {
-            var options = new MqttNet.MqttClientOptionsBuilder()
-                .WithTcpServer(_options.MqttHost, _options.MqttPort)
-                .WithClientId(_options.ClientId)
-                .WithCleanStart()
-                .WithKeepAlivePeriod(TimeSpan.FromSeconds(30))
-                .Build();
-
-            // 状态判定：broker 返回非 Success（如凭据错误/标识拒绝）也视为连接失败
-            var result = await _client!.ConnectAsync(options, ct);
-            if (result.ResultCode != MqttNet.MqttClientConnectResultCode.Success)
-                return OperationalError.Communication($"MQTT 接入连接失败: {result.ResultCode} - {result.ReasonString}");
-
-            await SubscribeAsync(ct);
-            return OperationResult.Success();
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return OperationalError.Communication($"MQTT 接入连接异常: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 订阅上行 topic（measurements / alarms，均 QoS1，契约见 ADR-008 D4）。
-    /// QoS1 保证至少一次投递（配合 <see cref="BatchDeduplicator"/> 去重）；订阅失败抛异常，
-    /// 由 <see cref="ConnectAndSubscribeAsync"/> 收敛为 <see cref="OperationResult"/> 供重试。
-    /// </summary>
-    /// <param name="ct">取消令牌</param>
-    private async Task SubscribeAsync(CancellationToken ct)
-    {
-        var subscribe = new MqttNet.MqttClientSubscribeOptionsBuilder()
-            .WithTopicFilter(TopicUtil.MeasurementsSubscription, MqttNet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
-            .WithTopicFilter(TopicUtil.AlarmsSubscription, MqttNet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
-            .Build();
-
-        var result = await _client!.SubscribeAsync(subscribe, ct);
-        _logger.LogInformation("Ingest 订阅 {Measurements} / {Alarms}（QoS1）",
-            TopicUtil.MeasurementsSubscription, TopicUtil.AlarmsSubscription);
-    }
+    private Task<OperationResult> ConnectAndSubscribeAsync(CancellationToken ct)
+        => IngestMqttConnection.ConnectAndSubscribeAsync(_client!, _options, _logger, ct);
 
     // ═══════ 消息处理 ═══════
 
