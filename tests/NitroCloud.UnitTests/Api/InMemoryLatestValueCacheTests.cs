@@ -28,10 +28,18 @@ public class InMemoryLatestValueCacheTests
             Quality = Quality.Good
         };
 
-    private static InMemoryLatestValueCache Create(int capacity = 100_000)
+    private static InMemoryLatestValueCache Create(int capacity = 100_000, Func<DateTime>? clock = null)
         => new(
             Options.Create(new ApiOptions { LatestValueCacheCapacity = capacity }),
-            NullLogger<InMemoryLatestValueCache>.Instance);
+            NullLogger<InMemoryLatestValueCache>.Instance,
+            clock);
+
+    private sealed class MutableClock(DateTime start)
+    {
+        private DateTime _now = start;
+        public void Set(DateTime t) => _now = t;
+        public DateTime Now() => _now;
+    }
 
     [Fact]
     public void Update_Then_GetSite_ReturnsAllPoints()
@@ -74,31 +82,50 @@ public class InMemoryLatestValueCacheTests
     }
 
     [Fact]
-    public void LastSeen_TakesMaxTimestamp_AcrossUpdates()
+    public void LastSeen_UsesReceiveTime_NotSourceTimestamp()
     {
-        var cache = Create();
+        var received = new DateTime(2026, 8, 23, 3, 0, 0, DateTimeKind.Utc);
+        var cache = Create(clock: () => received);
         var dev = Guid.NewGuid();
         var pt = Guid.NewGuid();
-        var t1 = new DateTime(2026, 8, 23, 1, 0, 0, DateTimeKind.Utc);
-        var t2 = new DateTime(2026, 8, 23, 2, 0, 0, DateTimeKind.Utc);
+        // 源时间戳是 2 小时前（模拟补发历史 / 网关时钟偏差）
+        var staleSource = received.AddHours(-2);
 
-        cache.Update(new[] { MakeRecord("site-1", dev, pt, "Temp", 1.0, t1) });
-        cache.Update(new[] { MakeRecord("site-1", dev, pt, "Temp", 2.0, t2) });
+        cache.Update(new[] { MakeRecord("site-1", dev, pt, "Temp", 1.0, staleSource) });
 
-        Assert.Equal(t2, cache.GetSiteLastSeen("site-1")!.Value);
-        Assert.Equal(t2, cache.GetDeviceLastSeen("site-1", dev.ToString())!.Value);
+        // 在线判定用「接收时间」，不随源时间戳变旧
+        Assert.Equal(received, cache.GetSiteLastSeen("site-1")!.Value);
+        Assert.Equal(received, cache.GetDeviceLastSeen("site-1", dev.ToString())!.Value);
+        // 展示用源时间戳保持不变（数据新鲜度语义）
+        Assert.Equal(staleSource, cache.GetPoint("site-1", dev.ToString(), pt.ToString())!.Timestamp);
+        // 未命中
         Assert.Null(cache.GetSiteLastSeen("nope"));
         Assert.Null(cache.GetDeviceLastSeen("nope", dev.ToString()));
     }
 
     [Fact]
+    public void OldSourceTimestamp_StillJudgeOnline()
+    {
+        // 回归：补发/带旧源时间戳的批次，设备仍应判在线（用接收时间）
+        var received = DateTime.UtcNow;
+        var cache = Create(clock: () => received);
+        var dev = Guid.NewGuid();
+
+        cache.Update(new[] { MakeRecord("site-1", dev, Guid.NewGuid(), "Temp", 1.0, received.AddHours(-2)) });
+
+        var svc = new OnlineStatusService(cache, Options.Create(new ApiOptions { OfflineThresholdSeconds = 60 }));
+        Assert.Equal("Online", svc.GetDeviceStatus("site-1", dev.ToString()));
+    }
+
+    [Fact]
     public void CapacityFull_EvictsOldestSite()
     {
-        var cache = Create(capacity: 1000);
         var early = new DateTime(2026, 8, 23, 1, 0, 0, DateTimeKind.Utc);
         var late = new DateTime(2026, 8, 23, 2, 0, 0, DateTimeKind.Utc);
+        var clock = new MutableClock(early);
+        var cache = Create(capacity: 1000, clock: clock.Now);
 
-        // 站点 a：灌满 1000 个点（时间戳最早）
+        // 站点 a：灌满 1000 个点（接收时间 early）
         for (int i = 0; i < 1000; i++)
         {
             cache.Update(new[]
@@ -108,7 +135,8 @@ public class InMemoryLatestValueCacheTests
         }
         Assert.Equal(1000, cache.GetSite("a").Count);
 
-        // 站点 b 首个点位触发收敛：逐出最旧站点 a（含其全部点位与 lastSeen 记录）
+        // 时钟前进，站点 b 首个点位触发收敛：逐出「最近接收」最旧的站点 a
+        clock.Set(late);
         cache.Update(new[] { MakeRecord("b", Guid.NewGuid(), Guid.NewGuid(), "pt", 1.0, late) });
 
         Assert.Empty(cache.GetSite("a"));
